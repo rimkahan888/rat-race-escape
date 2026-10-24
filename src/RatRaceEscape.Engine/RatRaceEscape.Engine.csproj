@@ -6,4 +6,10 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <EmbeddedResource Include="Professions\professions.json">
+      <LogicalName>RatRaceEscape.Engine.Professions.professions.json</LogicalName>
+    </EmbeddedResource>
+  </ItemGroup>
+
 </Project>
