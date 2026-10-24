@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/RatRaceEscape.Api/RatRaceEscape.Api.csproj" />
+    <Project Path="src/RatRaceEscape.Engine/RatRaceEscape.Engine.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/RatRaceEscape.Engine.Tests/RatRaceEscape.Engine.Tests.csproj" />
+  </Folder>
+</Solution>

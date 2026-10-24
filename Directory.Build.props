@@ -1,0 +1,12 @@
+<Project>
+  <PropertyGroup>
+    <Authors>Johan Karjadi</Authors>
+    <Company>Johan Karjadi</Company>
+    <Product>Rat Race Escape</Product>
+    <Copyright>Copyright (c) 2026 Johan Karjadi</Copyright>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <AnalysisLevel>latest</AnalysisLevel>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+</Project>
