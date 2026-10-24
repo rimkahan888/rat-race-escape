@@ -28,6 +28,12 @@ jobs:
       - name: Restore
         run: dotnet restore RatRaceEscape.slnx
 
+      - name: Check formatting
+        run: dotnet format RatRaceEscape.slnx --verify-no-changes --no-restore
+
+      - name: Check code style
+        run: dotnet format style RatRaceEscape.slnx --verify-no-changes --severity warn --no-restore
+
       - name: Build
         run: dotnet build RatRaceEscape.slnx --no-restore -c Release
 
