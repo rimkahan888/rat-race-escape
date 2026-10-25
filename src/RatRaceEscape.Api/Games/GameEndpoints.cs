@@ -10,7 +10,22 @@ public static class GameEndpoints
             .WithName("StartGame")
             .WithTags("Games");
 
+        endpoints.MapGet("/games/{id:guid}", GetGame)
+            .WithName("GetGame")
+            .WithTags("Games");
+
         return endpoints;
+    }
+
+    private static IResult GetGame(Guid id, IGameRepository games)
+    {
+        Game? game = games.Find(id);
+        if (game is null)
+        {
+            return Results.NotFound();
+        }
+
+        return Results.Ok(GameStateResponse.From(game));
     }
 
     private static IResult StartGame(StartGameRequest? request, IGameRepository games)
