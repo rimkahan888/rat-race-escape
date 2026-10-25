@@ -1,0 +1,9 @@
+namespace RatRaceEscape.Engine;
+
+/// <summary>
+/// Where the table is in the game. A new game starts in the rat race.
+/// </summary>
+public enum GamePhase
+{
+    RatRace,
+}
