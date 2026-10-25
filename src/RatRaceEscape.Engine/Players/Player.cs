@@ -6,12 +6,18 @@ namespace RatRaceEscape.Engine;
 /// </summary>
 public sealed class Player
 {
-    private Player(string name, Profession profession, TokenColour tokenColour, BalanceSheet balanceSheet)
+    private Player(
+        string name,
+        Profession profession,
+        TokenColour tokenColour,
+        BalanceSheet balanceSheet,
+        int childCount)
     {
         Name = name;
         Profession = profession;
         TokenColour = tokenColour;
         BalanceSheet = balanceSheet;
+        ChildCount = childCount;
     }
 
     public string Name { get; }
@@ -26,6 +32,12 @@ public sealed class Player
     /// Cash on hand. This is the savings line of the balance sheet.
     /// </summary>
     public Money Cash => BalanceSheet.Savings;
+
+    /// <summary>
+    /// Children at the table. A new player has none. The income statement
+    /// multiplies the profession's per-child expense by this count.
+    /// </summary>
+    public int ChildCount { get; }
 
     public static Player Create(string name, Profession profession, TokenColour tokenColour)
     {
@@ -55,12 +67,22 @@ public sealed class Player
             throw new PlayerValidationException(errors);
         }
 
-        return new Player(trimmedName, profession, tokenColour, BalanceSheet.FromProfession(profession));
+        return new Player(trimmedName, profession, tokenColour, BalanceSheet.FromProfession(profession), 0);
     }
 
     public Player WithBalanceSheet(BalanceSheet balanceSheet)
     {
         ArgumentNullException.ThrowIfNull(balanceSheet);
-        return new Player(Name, Profession, TokenColour, balanceSheet);
+        return new Player(Name, Profession, TokenColour, balanceSheet, ChildCount);
+    }
+
+    public Player WithChildCount(int childCount)
+    {
+        if (childCount < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(childCount), "Child count cannot be negative.");
+        }
+
+        return new Player(Name, Profession, TokenColour, BalanceSheet, childCount);
     }
 }
