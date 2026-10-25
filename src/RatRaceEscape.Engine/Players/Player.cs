@@ -1,28 +1,31 @@
 namespace RatRaceEscape.Engine;
 
 /// <summary>
-/// One person at the table. Cash starts as the profession's savings.
+/// One person at the table. Cash on hand is the savings line of the balance
+/// sheet, and it starts as the profession's savings.
 /// </summary>
 public sealed class Player
 {
-    private Player(string name, Profession profession, Money cash, TokenColour tokenColour)
+    private Player(string name, Profession profession, TokenColour tokenColour, BalanceSheet balanceSheet)
     {
         Name = name;
         Profession = profession;
-        Cash = cash;
         TokenColour = tokenColour;
+        BalanceSheet = balanceSheet;
     }
 
     public string Name { get; }
 
     public Profession Profession { get; }
 
-    /// <summary>
-    /// Cash on hand, in cents, taken from the profession's starting savings.
-    /// </summary>
-    public Money Cash { get; }
-
     public TokenColour TokenColour { get; }
+
+    public BalanceSheet BalanceSheet { get; }
+
+    /// <summary>
+    /// Cash on hand. This is the savings line of the balance sheet.
+    /// </summary>
+    public Money Cash => BalanceSheet.Savings;
 
     public static Player Create(string name, Profession profession, TokenColour tokenColour)
     {
@@ -52,6 +55,12 @@ public sealed class Player
             throw new PlayerValidationException(errors);
         }
 
-        return new Player(trimmedName, profession, profession.StartingSavings, tokenColour);
+        return new Player(trimmedName, profession, tokenColour, BalanceSheet.FromProfession(profession));
+    }
+
+    public Player WithBalanceSheet(BalanceSheet balanceSheet)
+    {
+        ArgumentNullException.ThrowIfNull(balanceSheet);
+        return new Player(Name, Profession, TokenColour, balanceSheet);
     }
 }
