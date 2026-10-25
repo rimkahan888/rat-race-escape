@@ -5,6 +5,13 @@ Accept: application/json
 
 ###
 
+@gameId = 00000000-0000-0000-0000-000000000000
+
+GET {{RatRaceEscape.Api_HostAddress}}/games/{{gameId}}
+Accept: application/json
+
+###
+
 POST {{RatRaceEscape.Api_HostAddress}}/games
 Content-Type: application/json
 
