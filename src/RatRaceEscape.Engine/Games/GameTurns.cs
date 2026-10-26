@@ -49,6 +49,7 @@ public sealed partial class Game
     /// Resolves the square the current player landed on. Deal, market, and doodad
     /// squares ask for that deck. Charity asks for a donation or a decline.
     /// A new arrival adds a child, up to the household cap.
+    /// Hours cut collects total expenses and skips the player's next two turns.
     /// The other squares are acknowledged.
     /// </summary>
     public Game Resolve(SpaceChoice choice = SpaceChoice.None)
@@ -83,6 +84,12 @@ public sealed partial class Game
             return WithPlayer(parent, TurnPhase.AwaitingEnd, LastRoll, pendingDeck: null);
         }
 
+        if (space.Kind == SpaceKind.Downsized)
+        {
+            Player benched = Downsized.Apply(CurrentPlayer);
+            return WithPlayer(benched, TurnPhase.AwaitingEnd, LastRoll, pendingDeck: null);
+        }
+
         DeckHook? pendingDeck = space.Kind switch
         {
             SpaceKind.Deal => DeckHook.Deal,
@@ -111,7 +118,8 @@ public sealed partial class Game
     }
 
     /// <summary>
-    /// Closes the turn and gives the dice to the next player.
+    /// Closes the turn and gives the dice to the next player who can take it.
+    /// A player with skipped turns misses this pass and loses one skipped turn.
     /// </summary>
     public Game EndTurn()
     {
@@ -123,8 +131,29 @@ public sealed partial class Game
                     : "Resolve the space before ending the turn.");
         }
 
-        int nextPlayer = (CurrentTurnIndex + 1) % Players.Count;
-        return WithTurn(nextPlayer, TurnPhase.AwaitingRoll, lastRoll: null, pendingDeck: null);
+        Player[] players = Players.ToArray();
+        int index = CurrentTurnIndex;
+        int skipped = 0;
+        int guardLimit = players.Length * 32;
+
+        while (true)
+        {
+            index = (index + 1) % players.Length;
+            int skips = players[index].SkipTurnsRemaining;
+            if (skips == 0)
+            {
+                break;
+            }
+
+            players[index] = players[index].WithSkipTurnsRemaining(skips - 1);
+            skipped++;
+            if (skipped > guardLimit)
+            {
+                throw new InvalidOperationException("Skip turns did not resolve.");
+            }
+        }
+
+        return new Game(Id, players, index, Phase, TurnPhase.AwaitingRoll, lastRoll: null, pendingDeck: null);
     }
 
     private Game WithPlayer(Player player, TurnPhase turnPhase, TurnRoll? lastRoll, DeckHook? pendingDeck)

@@ -96,17 +96,17 @@ public class TurnTests
         game = Finish(game, 2);
         Assert.Equal(SpaceKind.Baby, RatRaceBoard.At(game.CurrentPlayer.BoardIndex).Kind);
 
-        game = Finish(game, 5);
-        Assert.Equal(SpaceKind.Downsized, RatRaceBoard.At(game.CurrentPlayer.BoardIndex).Kind);
+        Game landed = game.Roll(new ScriptedDieRoller([5]));
 
-        Game landed = game.Roll(new ScriptedDieRoller([1]));
-        Game resolved = landed.Resolve();
-        Assert.Equal(DeckHook.Deal, resolved.PendingDeck);
-        game = resolved.EndTurn();
+        Assert.Equal(SpaceKind.Downsized, RatRaceBoard.At(landed.CurrentPlayer.BoardIndex).Kind);
+        Assert.Equal(cash + payday + (payday - landed.CurrentPlayer.Profession.Expenses.PerChild), landed.CurrentPlayer.Cash);
+        Assert.Equal(1, landed.CurrentPlayer.ChildCount);
+        Assert.Equal(0, landed.CurrentPlayer.SkipTurnsRemaining);
 
-        Assert.Equal(14, game.CurrentPlayer.BoardIndex);
-        Assert.Equal(cash + payday + (payday - game.CurrentPlayer.Profession.Expenses.PerChild), game.CurrentPlayer.Cash);
-        Assert.Equal(1, game.Players[0].ChildCount);
+        TurnException shortfall = Assert.Throws<TurnException>(() => landed.Resolve());
+
+        Assert.Contains("Cash cannot cover the downsized expenses.", shortfall.Errors);
+        Assert.Equal(TurnPhase.AwaitingResolve, landed.TurnPhase);
     }
 
     [Fact]

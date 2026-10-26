@@ -14,7 +14,8 @@ public sealed class Player
         BalanceSheet balanceSheet,
         int childCount,
         int boardIndex,
-        int extraDieTurnsRemaining)
+        int extraDieTurnsRemaining,
+        int skipTurnsRemaining)
     {
         Name = name;
         Profession = profession;
@@ -23,6 +24,7 @@ public sealed class Player
         ChildCount = childCount;
         BoardIndex = boardIndex;
         ExtraDieTurnsRemaining = extraDieTurnsRemaining;
+        SkipTurnsRemaining = skipTurnsRemaining;
     }
 
     public string Name { get; }
@@ -60,6 +62,12 @@ public sealed class Player
     /// </summary>
     public int ExtraDieTurnsRemaining { get; }
 
+    /// <summary>
+    /// Turns this player will miss after the current one. Hours cut adds two.
+    /// A new player has none.
+    /// </summary>
+    public int SkipTurnsRemaining { get; }
+
     public static Player Create(string name, Profession profession, TokenColour tokenColour)
     {
         ArgumentNullException.ThrowIfNull(name);
@@ -95,13 +103,22 @@ public sealed class Player
             BalanceSheet.FromProfession(profession),
             childCount: 0,
             boardIndex: 0,
-            extraDieTurnsRemaining: 0);
+            extraDieTurnsRemaining: 0,
+            skipTurnsRemaining: 0);
     }
 
     public Player WithBalanceSheet(BalanceSheet balanceSheet)
     {
         ArgumentNullException.ThrowIfNull(balanceSheet);
-        return new Player(Name, Profession, TokenColour, balanceSheet, ChildCount, BoardIndex, ExtraDieTurnsRemaining);
+        return new Player(
+            Name,
+            Profession,
+            TokenColour,
+            balanceSheet,
+            ChildCount,
+            BoardIndex,
+            ExtraDieTurnsRemaining,
+            SkipTurnsRemaining);
     }
 
     public Player WithChildCount(int childCount)
@@ -111,7 +128,15 @@ public sealed class Player
             throw new ArgumentOutOfRangeException(nameof(childCount), "Child count cannot be negative.");
         }
 
-        return new Player(Name, Profession, TokenColour, BalanceSheet, childCount, BoardIndex, ExtraDieTurnsRemaining);
+        return new Player(
+            Name,
+            Profession,
+            TokenColour,
+            BalanceSheet,
+            childCount,
+            BoardIndex,
+            ExtraDieTurnsRemaining,
+            SkipTurnsRemaining);
     }
 
     public Player WithBoardIndex(int boardIndex)
@@ -123,7 +148,15 @@ public sealed class Player
                 $"Board index must be from 0 to {RatRaceBoard.SpaceCount - 1}.");
         }
 
-        return new Player(Name, Profession, TokenColour, BalanceSheet, ChildCount, boardIndex, ExtraDieTurnsRemaining);
+        return new Player(
+            Name,
+            Profession,
+            TokenColour,
+            BalanceSheet,
+            ChildCount,
+            boardIndex,
+            ExtraDieTurnsRemaining,
+            SkipTurnsRemaining);
     }
 
     public Player WithExtraDieTurns(int extraDieTurnsRemaining)
@@ -135,7 +168,33 @@ public sealed class Player
                 "Extra die turns cannot be negative.");
         }
 
-        return new Player(Name, Profession, TokenColour, BalanceSheet, ChildCount, BoardIndex, extraDieTurnsRemaining);
+        return new Player(
+            Name,
+            Profession,
+            TokenColour,
+            BalanceSheet,
+            ChildCount,
+            BoardIndex,
+            extraDieTurnsRemaining,
+            SkipTurnsRemaining);
+    }
+
+    public Player WithSkipTurnsRemaining(int skipTurnsRemaining)
+    {
+        if (skipTurnsRemaining < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(skipTurnsRemaining), "Skipped turns cannot be negative.");
+        }
+
+        return new Player(
+            Name,
+            Profession,
+            TokenColour,
+            BalanceSheet,
+            ChildCount,
+            BoardIndex,
+            ExtraDieTurnsRemaining,
+            skipTurnsRemaining);
     }
 
     public Player WithCash(Money cash)
