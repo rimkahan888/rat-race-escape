@@ -2,7 +2,8 @@ namespace RatRaceEscape.Engine;
 
 /// <summary>
 /// One person at the table. Cash on hand is the savings line of the balance
-/// sheet, and it starts as the profession's savings.
+/// sheet, and it starts as the profession's savings. The token starts on the
+/// opening space of the rat race.
 /// </summary>
 public sealed class Player
 {
@@ -11,13 +12,15 @@ public sealed class Player
         Profession profession,
         TokenColour tokenColour,
         BalanceSheet balanceSheet,
-        int childCount)
+        int childCount,
+        int boardIndex)
     {
         Name = name;
         Profession = profession;
         TokenColour = tokenColour;
         BalanceSheet = balanceSheet;
         ChildCount = childCount;
+        BoardIndex = boardIndex;
     }
 
     public string Name { get; }
@@ -38,6 +41,11 @@ public sealed class Player
     /// multiplies the profession's per-child expense by this count.
     /// </summary>
     public int ChildCount { get; }
+
+    /// <summary>
+    /// Square the token is on. A new player stands on the opening space.
+    /// </summary>
+    public int BoardIndex { get; }
 
     public static Player Create(string name, Profession profession, TokenColour tokenColour)
     {
@@ -67,13 +75,19 @@ public sealed class Player
             throw new PlayerValidationException(errors);
         }
 
-        return new Player(trimmedName, profession, tokenColour, BalanceSheet.FromProfession(profession), 0);
+        return new Player(
+            trimmedName,
+            profession,
+            tokenColour,
+            BalanceSheet.FromProfession(profession),
+            childCount: 0,
+            boardIndex: 0);
     }
 
     public Player WithBalanceSheet(BalanceSheet balanceSheet)
     {
         ArgumentNullException.ThrowIfNull(balanceSheet);
-        return new Player(Name, Profession, TokenColour, balanceSheet, ChildCount);
+        return new Player(Name, Profession, TokenColour, balanceSheet, ChildCount, BoardIndex);
     }
 
     public Player WithChildCount(int childCount)
@@ -83,6 +97,18 @@ public sealed class Player
             throw new ArgumentOutOfRangeException(nameof(childCount), "Child count cannot be negative.");
         }
 
-        return new Player(Name, Profession, TokenColour, BalanceSheet, childCount);
+        return new Player(Name, Profession, TokenColour, BalanceSheet, childCount, BoardIndex);
+    }
+
+    public Player WithBoardIndex(int boardIndex)
+    {
+        if (boardIndex < 0 || boardIndex >= RatRaceBoard.SpaceCount)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(boardIndex),
+                $"Board index must be from 0 to {RatRaceBoard.SpaceCount - 1}.");
+        }
+
+        return new Player(Name, Profession, TokenColour, BalanceSheet, ChildCount, boardIndex);
     }
 }

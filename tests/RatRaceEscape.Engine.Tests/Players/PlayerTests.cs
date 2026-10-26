@@ -119,6 +119,62 @@ public class PlayerTests
         Assert.Equal(3, exception.Errors.Count);
     }
 
+    [Fact]
+    public void Create_starts_on_the_opening_space()
+    {
+        Player player = Player.Create("Ava", ProfessionCatalog.GetById("night-baker"), TokenColour.Amber);
+
+        Assert.Equal(0, player.BoardIndex);
+        Assert.Equal(SpaceKind.Deal, RatRaceBoard.At(player.BoardIndex).Kind);
+    }
+
+    [Fact]
+    public void WithBoardIndex_moves_the_token_and_keeps_the_rest()
+    {
+        Player player = Player.Create("Ava", ProfessionCatalog.GetById("night-baker"), TokenColour.Amber)
+            .WithChildCount(2);
+
+        Player moved = player.WithBoardIndex(6);
+
+        Assert.Equal(6, moved.BoardIndex);
+        Assert.Equal(2, moved.ChildCount);
+        Assert.Equal(player.Cash, moved.Cash);
+        Assert.Equal(player.Name, moved.Name);
+        Assert.Same(player.Profession, moved.Profession);
+        Assert.Equal(TokenColour.Amber, moved.TokenColour);
+        Assert.Equal(0, player.BoardIndex);
+    }
+
+    [Theory]
+    [InlineData(-1)]
+    [InlineData(24)]
+    public void WithBoardIndex_rejects_an_index_off_the_loop(int index)
+    {
+        Player player = Player.Create("Ava", ProfessionCatalog.GetById("night-baker"), TokenColour.Amber);
+
+        ArgumentOutOfRangeException exception = Assert.Throws<ArgumentOutOfRangeException>(() =>
+            player.WithBoardIndex(index));
+
+        Assert.Equal("boardIndex", exception.ParamName);
+        Assert.Contains("Board index must be from 0 to 23.", exception.Message, StringComparison.Ordinal);
+        Assert.Equal(0, player.BoardIndex);
+    }
+
+    [Fact]
+    public void Child_count_and_balance_sheet_keep_the_board_index()
+    {
+        Player player = Player.Create("Ava", ProfessionCatalog.GetById("night-baker"), TokenColour.Amber)
+            .WithBoardIndex(12);
+
+        Player withChild = player.WithChildCount(1);
+        Player withSheet = player.WithBalanceSheet(player.BalanceSheet);
+
+        Assert.Equal(12, withChild.BoardIndex);
+        Assert.Equal(1, withChild.ChildCount);
+        Assert.Equal(12, withSheet.BoardIndex);
+        Assert.Equal(0, withSheet.ChildCount);
+    }
+
     private static Profession WithSavings(Money savings)
     {
         Profession baker = ProfessionCatalog.GetById("night-baker");
