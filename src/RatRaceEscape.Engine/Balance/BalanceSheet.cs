@@ -93,6 +93,11 @@ public sealed class BalanceSheet
             []);
     }
 
+    public BalanceSheet WithSavings(Money savings)
+    {
+        return Create(savings, Stocks, RealEstate, Businesses, Mortgage, CarLoan, CreditCard, OtherLoans);
+    }
+
     public static BalanceSheet Create(
         Money savings,
         IReadOnlyList<StockHolding> stocks,

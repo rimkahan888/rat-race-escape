@@ -111,4 +111,9 @@ public sealed class Player
 
         return new Player(Name, Profession, TokenColour, BalanceSheet, ChildCount, boardIndex);
     }
+
+    public Player WithCash(Money cash)
+    {
+        return WithBalanceSheet(BalanceSheet.WithSavings(cash));
+    }
 }

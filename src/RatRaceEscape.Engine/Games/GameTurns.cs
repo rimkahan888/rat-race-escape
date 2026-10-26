@@ -4,7 +4,8 @@ public sealed partial class Game
 {
     /// <summary>
     /// Rolls one die for the current player and moves their token that many squares.
-    /// The square is not resolved yet.
+    /// Each payday the token lands on or passes pays that player's monthly cash flow once.
+    /// The landed square is not resolved yet.
     /// </summary>
     public Game Roll(IDieRoller roller, int dieCount = 1)
     {
@@ -24,8 +25,11 @@ public sealed partial class Game
         }
 
         DiceRoll dice = Dice.Roll(roller, dieCount);
-        TurnRoll roll = new(dice, CurrentPlayer.BoardIndex);
-        Player moved = CurrentPlayer.WithBoardIndex(roll.ToIndex);
+        int fromIndex = CurrentPlayer.BoardIndex;
+        TrackMove move = RatRaceTrack.Move(fromIndex, dice.Total);
+        Player paid = Payday.Collect(CurrentPlayer, move.Paydays.Count);
+        TurnRoll roll = new(dice, fromIndex, paid.Cash - CurrentPlayer.Cash);
+        Player moved = paid.WithBoardIndex(move.ToIndex);
         return WithPlayer(moved, TurnPhase.AwaitingResolve, roll, pendingDeck: null);
     }
 
