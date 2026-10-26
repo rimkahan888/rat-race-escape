@@ -105,8 +105,8 @@ public class TurnTests
         game = resolved.EndTurn();
 
         Assert.Equal(14, game.CurrentPlayer.BoardIndex);
-        Assert.Equal(cash + (payday * 2), game.CurrentPlayer.Cash);
-        Assert.Equal(0, game.Players[0].ChildCount);
+        Assert.Equal(cash + payday + (payday - game.CurrentPlayer.Profession.Expenses.PerChild), game.CurrentPlayer.Cash);
+        Assert.Equal(1, game.Players[0].ChildCount);
     }
 
     [Fact]

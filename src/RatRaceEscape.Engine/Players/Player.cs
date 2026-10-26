@@ -45,6 +45,11 @@ public sealed class Player
     public int ChildCount { get; }
 
     /// <summary>
+    /// The most children a new arrival will add.
+    /// </summary>
+    public const int MaximumChildren = 3;
+
+    /// <summary>
     /// Square the token is on. A new player stands on the opening space.
     /// </summary>
     public int BoardIndex { get; }

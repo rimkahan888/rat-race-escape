@@ -48,6 +48,7 @@ public sealed partial class Game
     /// <summary>
     /// Resolves the square the current player landed on. Deal, market, and doodad
     /// squares ask for that deck. Charity asks for a donation or a decline.
+    /// A new arrival adds a child, up to the household cap.
     /// The other squares are acknowledged.
     /// </summary>
     public Game Resolve(SpaceChoice choice = SpaceChoice.None)
@@ -74,6 +75,12 @@ public sealed partial class Game
         if (choice != SpaceChoice.None)
         {
             throw new TurnException("This space does not take a choice.");
+        }
+
+        if (space.Kind == SpaceKind.Baby)
+        {
+            Player parent = Baby.Arrive(CurrentPlayer);
+            return WithPlayer(parent, TurnPhase.AwaitingEnd, LastRoll, pendingDeck: null);
         }
 
         DeckHook? pendingDeck = space.Kind switch
