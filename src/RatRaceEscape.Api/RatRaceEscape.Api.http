@@ -26,3 +26,25 @@ Content-Type: application/json
 }
 
 ###
+
+POST {{RatRaceEscape.Api_HostAddress}}/games/{{gameId}}/roll
+Content-Type: application/json
+
+{
+  "dieCount": 1
+}
+
+###
+
+POST {{RatRaceEscape.Api_HostAddress}}/games/{{gameId}}/resolve
+Content-Type: application/json
+
+{
+  "choice": "None"
+}
+
+###
+
+POST {{RatRaceEscape.Api_HostAddress}}/games/{{gameId}}/end-turn
+
+###

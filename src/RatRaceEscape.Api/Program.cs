@@ -11,6 +11,7 @@ builder.Services.ConfigureHttpJsonOptions(options =>
     options.SerializerOptions.Converters.Add(new JsonStringEnumConverter(namingPolicy: null, allowIntegerValues: false));
 });
 builder.Services.AddSingleton<IGameRepository, InMemoryGameRepository>();
+builder.Services.AddSingleton<IDieRoller, RandomDieRoller>();
 
 var app = builder.Build();
 
