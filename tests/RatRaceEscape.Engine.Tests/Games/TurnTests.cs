@@ -61,7 +61,7 @@ public class TurnTests
     public void Resolve_acknowledges_a_square_that_has_no_deck()
     {
         Game start = Solo();
-        Game charity = start.Roll(new ScriptedDieRoller([3])).Resolve();
+        Game charity = start.Roll(new ScriptedDieRoller([3])).Resolve(SpaceChoice.Decline);
         Game rolledPayday = start.Roll(new ScriptedDieRoller([6]));
         Game payday = rolledPayday.Resolve();
 
@@ -146,15 +146,14 @@ public class TurnTests
 
     [Theory]
     [InlineData(0)]
-    [InlineData(2)]
     [InlineData(3)]
-    public void Roll_rejects_any_count_other_than_one_die(int dieCount)
+    public void Roll_rejects_a_die_count_outside_one_or_two(int dieCount)
     {
         ScriptedDieRoller dice = new([1, 1, 1]);
 
         TurnException exception = Assert.Throws<TurnException>(() => Solo().Roll(dice, dieCount));
 
-        Assert.Contains("Roll one die.", exception.Errors);
+        Assert.Contains("Roll one or two dice.", exception.Errors);
         Assert.Equal(3, dice.Remaining);
     }
 
