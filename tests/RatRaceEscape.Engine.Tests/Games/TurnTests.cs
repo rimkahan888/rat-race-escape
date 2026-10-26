@@ -60,14 +60,17 @@ public class TurnTests
     [Fact]
     public void Resolve_acknowledges_a_square_that_has_no_deck()
     {
-        Game charity = Solo().Roll(new ScriptedDieRoller([3])).Resolve();
-        Game payday = Solo().Roll(new ScriptedDieRoller([6])).Resolve();
+        Game start = Solo();
+        Game charity = start.Roll(new ScriptedDieRoller([3])).Resolve();
+        Game rolledPayday = start.Roll(new ScriptedDieRoller([6]));
+        Game payday = rolledPayday.Resolve();
 
         Assert.Equal(SpaceKind.Charity, RatRaceBoard.At(charity.CurrentPlayer.BoardIndex).Kind);
         Assert.Null(charity.PendingDeck);
+        Assert.Equal(start.Players[0].Cash, charity.Players[0].Cash);
         Assert.Equal(SpaceKind.Payday, RatRaceBoard.At(payday.CurrentPlayer.BoardIndex).Kind);
         Assert.Null(payday.PendingDeck);
-        Assert.Equal(payday.Players[0].Cash, Solo().Players[0].Cash);
+        Assert.Equal(rolledPayday.CurrentPlayer.Cash, payday.CurrentPlayer.Cash);
     }
 
     [Fact]
@@ -75,6 +78,7 @@ public class TurnTests
     {
         Game game = Solo();
         Money cash = game.CurrentPlayer.Cash;
+        Money payday = CashFlow.For(game.CurrentPlayer).Monthly;
 
         game = Finish(game, 1);
         Assert.Equal(1, game.CurrentPlayer.BoardIndex);
@@ -101,7 +105,7 @@ public class TurnTests
         game = resolved.EndTurn();
 
         Assert.Equal(14, game.CurrentPlayer.BoardIndex);
-        Assert.Equal(cash, game.CurrentPlayer.Cash);
+        Assert.Equal(cash + (payday * 2), game.CurrentPlayer.Cash);
         Assert.Equal(0, game.Players[0].ChildCount);
     }
 
