@@ -2,20 +2,31 @@ namespace RatRaceEscape.Engine;
 
 /// <summary>
 /// One table. Players are seated from the professions they chose, the first
-/// player is on turn, and the phase starts in the rat race.
+/// player is on turn, and the phase starts in the rat race. The turn starts
+/// by waiting for that player to roll.
 /// </summary>
-public sealed class Game
+public sealed partial class Game
 {
     public const int MinimumPlayers = 1;
 
     public const int MaximumPlayers = 6;
 
-    private Game(Guid id, IReadOnlyList<Player> players, int currentTurnIndex, GamePhase phase)
+    private Game(
+        Guid id,
+        IReadOnlyList<Player> players,
+        int currentTurnIndex,
+        GamePhase phase,
+        TurnPhase turnPhase,
+        TurnRoll? lastRoll,
+        DeckHook? pendingDeck)
     {
         Id = id;
         Players = players;
         CurrentTurnIndex = currentTurnIndex;
         Phase = phase;
+        TurnPhase = turnPhase;
+        LastRoll = lastRoll;
+        PendingDeck = pendingDeck;
     }
 
     public Guid Id { get; }
@@ -25,6 +36,22 @@ public sealed class Game
     public int CurrentTurnIndex { get; }
 
     public GamePhase Phase { get; }
+
+    /// <summary>
+    /// Where this turn is. A new game is waiting for the first player to roll.
+    /// </summary>
+    public TurnPhase TurnPhase { get; }
+
+    /// <summary>
+    /// The roll that opened the current turn, or null while the table waits for one.
+    /// </summary>
+    public TurnRoll? LastRoll { get; }
+
+    /// <summary>
+    /// Deck the landed square asked for, or null when that square has no deck.
+    /// Set when the space is resolved, and cleared when the turn ends.
+    /// </summary>
+    public DeckHook? PendingDeck { get; }
 
     public Player CurrentPlayer => Players[CurrentTurnIndex];
 
@@ -104,7 +131,14 @@ public sealed class Game
             throw new GameValidationException(errors);
         }
 
-        return new Game(id, players.ToArray(), currentTurnIndex: 0, GamePhase.RatRace);
+        return new Game(
+            id,
+            players.ToArray(),
+            currentTurnIndex: 0,
+            GamePhase.RatRace,
+            TurnPhase.AwaitingRoll,
+            lastRoll: null,
+            pendingDeck: null);
     }
 
     private static Profession? ResolveProfession(string? professionId, List<string> errors)
