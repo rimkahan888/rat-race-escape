@@ -14,7 +14,54 @@ public static class GameEndpoints
             .WithName("GetGame")
             .WithTags("Games");
 
+        endpoints.MapPost("/games/{id:guid}/roll", Roll)
+            .WithName("RollTurn")
+            .WithTags("Games");
+
+        endpoints.MapPost("/games/{id:guid}/resolve", ResolveTurn)
+            .WithName("ResolveTurn")
+            .WithTags("Games");
+
+        endpoints.MapPost("/games/{id:guid}/end-turn", EndTurn)
+            .WithName("EndTurn")
+            .WithTags("Games");
+
         return endpoints;
+    }
+
+    private static IResult Roll(Guid id, RollRequest? request, IGameRepository games, IDieRoller dice)
+    {
+        return Play(id, games, game => game.Roll(dice, request?.DieCount ?? 1));
+    }
+
+    private static IResult ResolveTurn(Guid id, ResolveRequest? request, IGameRepository games)
+    {
+        return Play(id, games, game => game.Resolve(request?.Choice ?? SpaceChoice.None));
+    }
+
+    private static IResult EndTurn(Guid id, IGameRepository games)
+    {
+        return Play(id, games, game => game.EndTurn());
+    }
+
+    private static IResult Play(Guid id, IGameRepository games, Func<Game, Game> action)
+    {
+        Game? game = games.Find(id);
+        if (game is null)
+        {
+            return Results.NotFound();
+        }
+
+        try
+        {
+            Game updated = action(game);
+            games.Save(updated);
+            return Results.Ok(GameStateResponse.From(updated));
+        }
+        catch (TurnException exception)
+        {
+            return Results.Conflict(new GameRequestError(exception.Errors));
+        }
     }
 
     private static IResult GetGame(Guid id, IGameRepository games)
@@ -75,3 +122,7 @@ public static class GameEndpoints
 }
 
 public sealed record GameRequestError(IReadOnlyList<string> Errors);
+
+public sealed record RollRequest(int? DieCount);
+
+public sealed record ResolveRequest(SpaceChoice? Choice);
