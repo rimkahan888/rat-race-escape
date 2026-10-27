@@ -42,15 +42,16 @@ public sealed partial class Game
             moved = moved.WithExtraDieTurns(extraDieTurns - 1);
         }
 
-        return WithPlayer(moved, TurnPhase.AwaitingResolve, roll, pendingDeck: null);
+        return WithPlayer(moved, TurnPhase.AwaitingResolve, roll, pendingDeck: null, drawn: null, Piles);
     }
 
     /// <summary>
-    /// Resolves the square the current player landed on. Deal, market, and doodad
-    /// squares ask for that deck. Charity asks for a donation or a decline.
-    /// A new arrival adds a child, up to the household cap.
-    /// Hours cut collects total expenses and skips the player's next two turns.
-    /// The other squares are acknowledged.
+    /// Resolves the square the current player landed on. An offer draws a small
+    /// or big deal, whichever the player chooses. The market and an unplanned
+    /// bill draw the next card of that deck. The bill is paid from cash on hand.
+    /// Charity asks for a donation or a decline. A new arrival adds a child, up
+    /// to the household cap. Hours cut collects total expenses and skips the
+    /// player's next two turns. The other squares are acknowledged.
     /// </summary>
     public Game Resolve(SpaceChoice choice = SpaceChoice.None)
     {
@@ -73,6 +74,11 @@ public sealed partial class Game
             return ResolveCharity(choice);
         }
 
+        if (space.Kind == SpaceKind.Deal)
+        {
+            return ResolveDeal(choice);
+        }
+
         if (choice != SpaceChoice.None)
         {
             throw new TurnException("This space does not take a choice.");
@@ -81,31 +87,33 @@ public sealed partial class Game
         if (space.Kind == SpaceKind.Baby)
         {
             Player parent = Baby.Arrive(CurrentPlayer);
-            return WithPlayer(parent, TurnPhase.AwaitingEnd, LastRoll, pendingDeck: null);
+            return WithPlayer(parent, TurnPhase.AwaitingEnd, LastRoll, pendingDeck: null, drawn: null, Piles);
         }
 
         if (space.Kind == SpaceKind.Downsized)
         {
             Player benched = Downsized.Apply(CurrentPlayer);
-            return WithPlayer(benched, TurnPhase.AwaitingEnd, LastRoll, pendingDeck: null);
+            return WithPlayer(benched, TurnPhase.AwaitingEnd, LastRoll, pendingDeck: null, drawn: null, Piles);
         }
 
-        DeckHook? pendingDeck = space.Kind switch
+        if (space.Kind == SpaceKind.Market)
         {
-            SpaceKind.Deal => DeckHook.Deal,
-            SpaceKind.Market => DeckHook.Market,
-            SpaceKind.Doodad => DeckHook.Doodad,
-            _ => null,
-        };
+            return DrawMarket();
+        }
 
-        return WithTurn(CurrentTurnIndex, TurnPhase.AwaitingEnd, LastRoll, pendingDeck);
+        if (space.Kind == SpaceKind.Doodad)
+        {
+            return DrawDoodad();
+        }
+
+        return WithTurn(CurrentTurnIndex, TurnPhase.AwaitingEnd, LastRoll, pendingDeck: null, drawn: null, Piles);
     }
 
     private Game ResolveCharity(SpaceChoice choice)
     {
         if (choice == SpaceChoice.Decline)
         {
-            return WithTurn(CurrentTurnIndex, TurnPhase.AwaitingEnd, LastRoll, pendingDeck: null);
+            return WithTurn(CurrentTurnIndex, TurnPhase.AwaitingEnd, LastRoll, pendingDeck: null, drawn: null, Piles);
         }
 
         if (choice != SpaceChoice.Donate)
@@ -114,12 +122,67 @@ public sealed partial class Game
         }
 
         Player donor = Charity.Donate(CurrentPlayer);
-        return WithPlayer(donor, TurnPhase.AwaitingEnd, LastRoll, pendingDeck: null);
+        return WithPlayer(donor, TurnPhase.AwaitingEnd, LastRoll, pendingDeck: null, drawn: null, Piles);
+    }
+
+    private Game ResolveDeal(SpaceChoice choice)
+    {
+        if (choice == SpaceChoice.SmallDeal)
+        {
+            DeckDraw<SmallDeal> drawn = Piles.SmallDeals.Draw();
+            return WithTurn(
+                CurrentTurnIndex,
+                TurnPhase.AwaitingEnd,
+                LastRoll,
+                DeckHook.Deal,
+                DrawnCard.From(drawn.Card),
+                Piles.WithSmallDeals(drawn.Deck));
+        }
+
+        if (choice == SpaceChoice.BigDeal)
+        {
+            DeckDraw<BigDeal> drawn = Piles.BigDeals.Draw();
+            return WithTurn(
+                CurrentTurnIndex,
+                TurnPhase.AwaitingEnd,
+                LastRoll,
+                DeckHook.Deal,
+                DrawnCard.From(drawn.Card),
+                Piles.WithBigDeals(drawn.Deck));
+        }
+
+        throw new TurnException("An offer needs a small-deal or big-deal choice.");
+    }
+
+    private Game DrawMarket()
+    {
+        DeckDraw<MarketCard> drawn = Piles.Market.Draw();
+        return WithTurn(
+            CurrentTurnIndex,
+            TurnPhase.AwaitingEnd,
+            LastRoll,
+            DeckHook.Market,
+            DrawnCard.From(drawn.Card),
+            Piles.WithMarket(drawn.Deck));
+    }
+
+    private Game DrawDoodad()
+    {
+        DeckDraw<Doodad> drawn = Piles.Doodads.Draw();
+        Player payer = DoodadCharge.Pay(CurrentPlayer, drawn.Card);
+        return WithPlayer(
+            payer,
+            TurnPhase.AwaitingEnd,
+            LastRoll,
+            DeckHook.Doodad,
+            DrawnCard.From(drawn.Card),
+            Piles.WithDoodads(drawn.Deck));
     }
 
     /// <summary>
     /// Closes the turn and gives the dice to the next player who can take it.
-    /// A player with skipped turns misses this pass and loses one skipped turn.
+    /// A drawn card goes onto its discard pile. A player with skipped turns
+    /// misses this pass and loses one skipped turn.
     /// </summary>
     public Game EndTurn()
     {
@@ -153,18 +216,69 @@ public sealed partial class Game
             }
         }
 
-        return new Game(Id, players, index, Phase, TurnPhase.AwaitingRoll, lastRoll: null, pendingDeck: null);
+        return new Game(
+            Id,
+            players,
+            index,
+            Phase,
+            TurnPhase.AwaitingRoll,
+            lastRoll: null,
+            pendingDeck: null,
+            Discard(Piles, Drawn),
+            drawn: null);
     }
 
-    private Game WithPlayer(Player player, TurnPhase turnPhase, TurnRoll? lastRoll, DeckHook? pendingDeck)
+    private static CardPiles Discard(CardPiles piles, DrawnCard? drawn)
+    {
+        if (drawn is null)
+        {
+            return piles;
+        }
+
+        if (drawn.SmallDeal is not null)
+        {
+            return piles.WithSmallDeals(piles.SmallDeals.Discard(drawn.SmallDeal));
+        }
+
+        if (drawn.BigDeal is not null)
+        {
+            return piles.WithBigDeals(piles.BigDeals.Discard(drawn.BigDeal));
+        }
+
+        if (drawn.Market is not null)
+        {
+            return piles.WithMarket(piles.Market.Discard(drawn.Market));
+        }
+
+        if (drawn.Doodad is not null)
+        {
+            return piles.WithDoodads(piles.Doodads.Discard(drawn.Doodad));
+        }
+
+        throw new InvalidOperationException("A drawn card is missing its source.");
+    }
+
+    private Game WithPlayer(
+        Player player,
+        TurnPhase turnPhase,
+        TurnRoll? lastRoll,
+        DeckHook? pendingDeck,
+        DrawnCard? drawn,
+        CardPiles piles)
     {
         Player[] players = Players.ToArray();
         players[CurrentTurnIndex] = player;
-        return new Game(Id, players, CurrentTurnIndex, Phase, turnPhase, lastRoll, pendingDeck);
+        return new Game(Id, players, CurrentTurnIndex, Phase, turnPhase, lastRoll, pendingDeck, piles, drawn);
     }
 
-    private Game WithTurn(int currentTurnIndex, TurnPhase turnPhase, TurnRoll? lastRoll, DeckHook? pendingDeck)
+    private Game WithTurn(
+        int currentTurnIndex,
+        TurnPhase turnPhase,
+        TurnRoll? lastRoll,
+        DeckHook? pendingDeck,
+        DrawnCard? drawn,
+        CardPiles piles)
     {
-        return new Game(Id, Players, currentTurnIndex, Phase, turnPhase, lastRoll, pendingDeck);
+        return new Game(Id, Players, currentTurnIndex, Phase, turnPhase, lastRoll, pendingDeck, piles, drawn);
     }
 }

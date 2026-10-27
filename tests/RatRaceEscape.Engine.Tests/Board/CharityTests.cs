@@ -94,9 +94,10 @@ public class CharityTests
         Assert.Equal(Money.FromCents(125_000), twoDice.CurrentPlayer.Cash);
 
         Game oneDie = twoDice.Resolve().EndTurn().Roll(new ScriptedDieRoller([1]));
+        Assert.Equal(SpaceKind.Deal, RatRaceBoard.At(oneDie.CurrentPlayer.BoardIndex).Kind);
         Assert.Equal(1, oneDie.CurrentPlayer.ExtraDieTurnsRemaining);
 
-        Game lastCharge = oneDie.Resolve().EndTurn().Roll(new ScriptedDieRoller([1]));
+        Game lastCharge = oneDie.Resolve(SpaceChoice.SmallDeal).EndTurn().Roll(new ScriptedDieRoller([1]));
         Assert.Equal(0, lastCharge.CurrentPlayer.ExtraDieTurnsRemaining);
 
         Game spent = lastCharge.Resolve().EndTurn();

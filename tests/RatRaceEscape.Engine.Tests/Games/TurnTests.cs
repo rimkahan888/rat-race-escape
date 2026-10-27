@@ -47,7 +47,7 @@ public class TurnTests
     public void Resolve_asks_for_the_deck_on_a_deal_market_or_doodad()
     {
         Game doodad = Solo().Roll(new ScriptedDieRoller([1])).Resolve();
-        Game deal = Solo().Roll(new ScriptedDieRoller([2])).Resolve();
+        Game deal = Solo().Roll(new ScriptedDieRoller([2])).Resolve(SpaceChoice.SmallDeal);
         Game market = Solo().Roll(new ScriptedDieRoller([5])).Resolve();
 
         Assert.Equal(DeckHook.Doodad, doodad.PendingDeck);
@@ -99,7 +99,8 @@ public class TurnTests
         Game landed = game.Roll(new ScriptedDieRoller([5]));
 
         Assert.Equal(SpaceKind.Downsized, RatRaceBoard.At(landed.CurrentPlayer.BoardIndex).Kind);
-        Assert.Equal(cash + payday + (payday - landed.CurrentPlayer.Profession.Expenses.PerChild), landed.CurrentPlayer.Cash);
+        Money doodad = DoodadCatalog.GetById("cracked-oven-door").Cost;
+        Assert.Equal(cash - doodad + payday + (payday - landed.CurrentPlayer.Profession.Expenses.PerChild), landed.CurrentPlayer.Cash);
         Assert.Equal(1, landed.CurrentPlayer.ChildCount);
         Assert.Equal(0, landed.CurrentPlayer.SkipTurnsRemaining);
 
@@ -172,7 +173,7 @@ public class TurnTests
 
         Game rolled = waiting.Roll(new ScriptedDieRoller([2, 2]));
         TurnException endEarly = Assert.Throws<TurnException>(() => rolled.EndTurn());
-        Game resolved = rolled.Resolve();
+        Game resolved = rolled.Resolve(SpaceChoice.SmallDeal);
         TurnException resolveAgain = Assert.Throws<TurnException>(() => resolved.Resolve());
         Game ended = resolved.EndTurn();
         TurnException resolveAfter = Assert.Throws<TurnException>(() => ended.Resolve());
@@ -208,7 +209,11 @@ public class TurnTests
 
     private static Game Finish(Game game, int face)
     {
-        return game.Roll(new ScriptedDieRoller([face])).Resolve().EndTurn();
+        Game rolled = game.Roll(new ScriptedDieRoller([face]));
+        SpaceChoice choice = RatRaceBoard.At(rolled.CurrentPlayer.BoardIndex).Kind == SpaceKind.Deal
+            ? SpaceChoice.SmallDeal
+            : SpaceChoice.None;
+        return rolled.Resolve(choice).EndTurn();
     }
 
     private static Game Solo()

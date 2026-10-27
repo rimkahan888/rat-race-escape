@@ -83,7 +83,7 @@ public class BabyTests
         Assert.Equal(1, resolved.Players[0].ChildCount);
         Assert.Equal(0, resolved.Players[1].ChildCount);
         Assert.Equal("Ava", resolved.CurrentPlayer.Name);
-        Assert.Equal(Money.FromCents(140_000), resolved.Players[1].Cash);
+        Assert.Equal(Money.FromCents(122_000), resolved.Players[1].Cash);
     }
 
     [Fact]
@@ -123,7 +123,11 @@ public class BabyTests
     {
         for (int turn = 0; turn < 4; turn++)
         {
-            game = game.Roll(new ScriptedDieRoller([6])).Resolve().EndTurn();
+            Game rolled = game.Roll(new ScriptedDieRoller([6]));
+            SpaceChoice choice = RatRaceBoard.At(rolled.CurrentPlayer.BoardIndex).Kind == SpaceKind.Deal
+                ? SpaceChoice.SmallDeal
+                : SpaceChoice.None;
+            game = rolled.Resolve(choice).EndTurn();
         }
 
         return game;

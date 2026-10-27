@@ -12,6 +12,7 @@ builder.Services.ConfigureHttpJsonOptions(options =>
 });
 builder.Services.AddSingleton<IGameRepository, InMemoryGameRepository>();
 builder.Services.AddSingleton<IDieRoller, RandomDieRoller>();
+builder.Services.AddSingleton<IShuffle, RandomShuffle>();
 
 var app = builder.Build();
 

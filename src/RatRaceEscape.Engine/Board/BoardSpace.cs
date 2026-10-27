@@ -2,7 +2,7 @@ namespace RatRaceEscape.Engine;
 
 /// <summary>
 /// One square on the rat-race loop. The title and summary are the square's
-/// own wording. Cards drawn on a deal, market, or doodad square come later.
+/// own wording. Deal, market, and doodad squares draw a card when resolved.
 /// </summary>
 public sealed class BoardSpace
 {

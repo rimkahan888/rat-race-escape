@@ -18,8 +18,11 @@ public sealed partial class Game
         GamePhase phase,
         TurnPhase turnPhase,
         TurnRoll? lastRoll,
-        DeckHook? pendingDeck)
+        DeckHook? pendingDeck,
+        CardPiles piles,
+        DrawnCard? drawn)
     {
+        ArgumentNullException.ThrowIfNull(piles);
         Id = id;
         Players = players;
         CurrentTurnIndex = currentTurnIndex;
@@ -27,6 +30,8 @@ public sealed partial class Game
         TurnPhase = turnPhase;
         LastRoll = lastRoll;
         PendingDeck = pendingDeck;
+        Piles = piles;
+        Drawn = drawn;
     }
 
     public Guid Id { get; }
@@ -48,17 +53,41 @@ public sealed partial class Game
     public TurnRoll? LastRoll { get; }
 
     /// <summary>
-    /// Deck the landed square asked for, or null when that square has no deck.
+    /// Deck the drawn card came from, or null when the square has no card.
     /// Set when the space is resolved, and cleared when the turn ends.
     /// </summary>
     public DeckHook? PendingDeck { get; }
+
+    /// <summary>
+    /// The four decks. A new game deals each catalog from the top unless a
+    /// shuffle was passed to <see cref="Create(Guid, IReadOnlyList{PlayerSetup}, IShuffle)"/>.
+    /// </summary>
+    public CardPiles Piles { get; }
+
+    /// <summary>
+    /// The card drawn for this space, or null before the draw and after the turn ends.
+    /// </summary>
+    public DrawnCard? Drawn { get; }
 
     public Player CurrentPlayer => Players[CurrentTurnIndex];
 
     public static Game Create(IReadOnlyList<PlayerSetup> setups) => Create(Guid.NewGuid(), setups);
 
-    public static Game Create(Guid id, IReadOnlyList<PlayerSetup> setups)
+    public static Game Create(IReadOnlyList<PlayerSetup> setups, IShuffle shuffle) =>
+        Create(Guid.NewGuid(), setups, shuffle);
+
+    public static Game Create(Guid id, IReadOnlyList<PlayerSetup> setups) =>
+        Create(id, setups, new IdentityShuffle());
+
+    public static Game Create(Guid id, IReadOnlyList<PlayerSetup> setups, IShuffle shuffle)
     {
+        ArgumentNullException.ThrowIfNull(shuffle);
+        return Create(id, setups, CardPiles.Create(shuffle));
+    }
+
+    public static Game Create(Guid id, IReadOnlyList<PlayerSetup> setups, CardPiles piles)
+    {
+        ArgumentNullException.ThrowIfNull(piles);
         ArgumentNullException.ThrowIfNull(setups);
 
         List<string> errors = new();
@@ -138,7 +167,9 @@ public sealed partial class Game
             GamePhase.RatRace,
             TurnPhase.AwaitingRoll,
             lastRoll: null,
-            pendingDeck: null);
+            pendingDeck: null,
+            piles,
+            drawn: null);
     }
 
     private static Profession? ResolveProfession(string? professionId, List<string> errors)
