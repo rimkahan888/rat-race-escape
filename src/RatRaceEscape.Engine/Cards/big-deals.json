@@ -1,0 +1,74 @@
+[
+  {
+    "id": "brickworks-lofts",
+    "kind": "property",
+    "title": "Brickworks Lofts",
+    "summary": "Four flats in the old brickworks. Two hundred twenty dollars a month is left after the mortgage.",
+    "downPaymentCents": 400000,
+    "loanCents": 2800000,
+    "monthlyCashFlowCents": 22000
+  },
+  {
+    "id": "old-cannery",
+    "kind": "property",
+    "title": "Old Cannery",
+    "summary": "The waterfront cannery, split into workshops. Four hundred eighty dollars a month clears the note.",
+    "downPaymentCents": 800000,
+    "loanCents": 5200000,
+    "monthlyCashFlowCents": 48000
+  },
+  {
+    "id": "ridge-orchard",
+    "kind": "property",
+    "title": "Ridge Orchard",
+    "summary": "Hillside rows of apple trees with a packing barn. One hundred forty dollars a month is left after the note.",
+    "downPaymentCents": 600000,
+    "loanCents": 2400000,
+    "monthlyCashFlowCents": 14000
+  },
+  {
+    "id": "lantern-yard",
+    "kind": "property",
+    "title": "Lantern Yard",
+    "summary": "A courtyard of rooms that needs new wiring. The mortgage outruns the rent by eighty dollars.",
+    "downPaymentCents": 500000,
+    "loanCents": 3600000,
+    "monthlyCashFlowCents": -8000
+  },
+  {
+    "id": "lantern-ferry",
+    "kind": "business",
+    "title": "Lantern Ferry",
+    "summary": "The dawn ferry and its ticket booth. Three hundred twenty dollars a month is left after the note.",
+    "downPaymentCents": 500000,
+    "loanCents": 1500000,
+    "monthlyCashFlowCents": 32000
+  },
+  {
+    "id": "kiln-and-clay",
+    "kind": "business",
+    "title": "Kiln and Clay",
+    "summary": "A pottery workshop bought with cash. It pays one hundred eighty dollars a month and owes nothing.",
+    "downPaymentCents": 300000,
+    "loanCents": 0,
+    "monthlyCashFlowCents": 18000
+  },
+  {
+    "id": "night-market-hall",
+    "kind": "business",
+    "title": "Night Market Hall",
+    "summary": "A covered hall of evening stalls. Seven hundred fifty dollars a month remains after the loan.",
+    "downPaymentCents": 1000000,
+    "loanCents": 4000000,
+    "monthlyCashFlowCents": 75000
+  },
+  {
+    "id": "tide-press-bindery",
+    "kind": "business",
+    "title": "Tide Press Bindery",
+    "summary": "A bindery that finishes the tide tables. Two hundred sixty dollars a month is left after the note.",
+    "downPaymentCents": 700000,
+    "loanCents": 1800000,
+    "monthlyCashFlowCents": 26000
+  }
+]
