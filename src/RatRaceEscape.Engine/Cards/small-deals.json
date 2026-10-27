@@ -1,0 +1,74 @@
+[
+  {
+    "id": "lumen-glass",
+    "kind": "stock",
+    "title": "Lumen Glass",
+    "summary": "A harbor glassworks is selling shares. The works pays no dividend this season.",
+    "symbol": "LUMEN",
+    "pricePerShareCents": 1000,
+    "dividendPerShareCents": 0
+  },
+  {
+    "id": "north-pier",
+    "kind": "stock",
+    "title": "North Pier Storage",
+    "summary": "Lockers beside the ferry ramp. Each share pays a dollar a month.",
+    "symbol": "PIER",
+    "pricePerShareCents": 2500,
+    "dividendPerShareCents": 100
+  },
+  {
+    "id": "brine-barrel",
+    "kind": "stock",
+    "title": "Brine and Barrel",
+    "summary": "A pickling house on the cannery road. Two dollars a month comes back on each share.",
+    "symbol": "BRINE",
+    "pricePerShareCents": 4000,
+    "dividendPerShareCents": 200
+  },
+  {
+    "id": "kite-press",
+    "kind": "stock",
+    "title": "Paper Kite Press",
+    "summary": "A small press that prints tide tables. The shares are cheap and pay nothing yet.",
+    "symbol": "KITE",
+    "pricePerShareCents": 500,
+    "dividendPerShareCents": 0
+  },
+  {
+    "id": "cedar-lane-studio",
+    "kind": "property",
+    "title": "Cedar Lane Studio",
+    "summary": "A one-room rental over a cabinet shop. Twenty dollars a month is left after the note.",
+    "downPaymentCents": 50000,
+    "mortgageCents": 450000,
+    "monthlyCashFlowCents": 2000
+  },
+  {
+    "id": "dockside-room",
+    "kind": "property",
+    "title": "Dockside Room",
+    "summary": "A furnished room above the chandlery. The net rent is forty dollars a month.",
+    "downPaymentCents": 80000,
+    "mortgageCents": 320000,
+    "monthlyCashFlowCents": 4000
+  },
+  {
+    "id": "maple-court-cottage",
+    "kind": "property",
+    "title": "Maple Court Cottage",
+    "summary": "A tired cottage that still needs a new roof. The note costs ten dollars more than the rent.",
+    "downPaymentCents": 120000,
+    "mortgageCents": 800000,
+    "monthlyCashFlowCents": -1000
+  },
+  {
+    "id": "orchard-gate-shed",
+    "kind": "property",
+    "title": "Orchard Gate Shed",
+    "summary": "A shed at the orchard gate, bought with cash and no note. It clears twenty-five dollars a month.",
+    "downPaymentCents": 40000,
+    "mortgageCents": 0,
+    "monthlyCashFlowCents": 2500
+  }
+]
