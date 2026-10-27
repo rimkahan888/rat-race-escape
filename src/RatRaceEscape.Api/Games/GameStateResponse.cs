@@ -42,7 +42,10 @@ public sealed record GameStateResponse(
                 space.Kind.ToString(),
                 space.Title,
                 player.SkipTurnsRemaining,
-                player.ExtraDieTurnsRemaining);
+                player.ExtraDieTurnsRemaining,
+                StocksOf(player),
+                RealEstateOf(player),
+                BusinessesOf(player));
         }
 
         TurnRoll? roll = game.LastRoll;
@@ -59,6 +62,54 @@ public sealed record GameStateResponse(
             game.PendingDeck?.ToString(),
             DrawnCardResponse.From(game.Drawn),
             players);
+    }
+
+    private static StockHoldingResponse[] StocksOf(Player player)
+    {
+        StockHoldingResponse[] stocks = new StockHoldingResponse[player.BalanceSheet.Stocks.Count];
+        for (int index = 0; index < stocks.Length; index++)
+        {
+            StockHolding stock = player.BalanceSheet.Stocks[index];
+            stocks[index] = new StockHoldingResponse(
+                stock.Symbol,
+                stock.Shares,
+                stock.CostPerShare.Cents,
+                stock.MonthlyDividendPerShare.Cents);
+        }
+
+        return stocks;
+    }
+
+    private static RealEstateHoldingResponse[] RealEstateOf(Player player)
+    {
+        RealEstateHoldingResponse[] properties = new RealEstateHoldingResponse[player.BalanceSheet.RealEstate.Count];
+        for (int index = 0; index < properties.Length; index++)
+        {
+            RealEstateHolding property = player.BalanceSheet.RealEstate[index];
+            properties[index] = new RealEstateHoldingResponse(
+                property.Name,
+                property.Cost.Cents,
+                property.Mortgage.Cents,
+                property.MonthlyCashFlow.Cents);
+        }
+
+        return properties;
+    }
+
+    private static BusinessHoldingResponse[] BusinessesOf(Player player)
+    {
+        BusinessHoldingResponse[] businesses = new BusinessHoldingResponse[player.BalanceSheet.Businesses.Count];
+        for (int index = 0; index < businesses.Length; index++)
+        {
+            BusinessHolding business = player.BalanceSheet.Businesses[index];
+            businesses[index] = new BusinessHoldingResponse(
+                business.Name,
+                business.Cost.Cents,
+                business.Liability.Cents,
+                business.MonthlyCashFlow.Cents);
+        }
+
+        return businesses;
     }
 }
 
@@ -171,4 +222,13 @@ public sealed record PlayerStateResponse(
     string SpaceKind,
     string SpaceTitle,
     int SkipTurnsRemaining,
-    int ExtraDieTurnsRemaining);
+    int ExtraDieTurnsRemaining,
+    IReadOnlyList<StockHoldingResponse> Stocks,
+    IReadOnlyList<RealEstateHoldingResponse> RealEstate,
+    IReadOnlyList<BusinessHoldingResponse> Businesses);
+
+public sealed record StockHoldingResponse(string Symbol, int Shares, long CostPerShareCents, long DividendPerShareCents);
+
+public sealed record RealEstateHoldingResponse(string Name, long CostCents, long MortgageCents, long MonthlyCashFlowCents);
+
+public sealed record BusinessHoldingResponse(string Name, long CostCents, long LiabilityCents, long MonthlyCashFlowCents);

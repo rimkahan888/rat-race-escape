@@ -26,7 +26,25 @@ public static class GameEndpoints
             .WithName("EndTurn")
             .WithTags("Games");
 
+        endpoints.MapPost("/games/{id:guid}/buy", Buy)
+            .WithName("BuyCard")
+            .WithTags("Games");
+
+        endpoints.MapPost("/games/{id:guid}/pass", Pass)
+            .WithName("PassCard")
+            .WithTags("Games");
+
         return endpoints;
+    }
+
+    private static IResult Buy(Guid id, BuyRequest? request, IGameRepository games)
+    {
+        return Play(id, games, game => game.Buy(request?.Shares));
+    }
+
+    private static IResult Pass(Guid id, IGameRepository games)
+    {
+        return Play(id, games, game => game.Pass());
     }
 
     private static IResult Roll(Guid id, RollRequest? request, IGameRepository games, IDieRoller dice)
@@ -126,3 +144,5 @@ public sealed record GameRequestError(IReadOnlyList<string> Errors);
 public sealed record RollRequest(int? DieCount);
 
 public sealed record ResolveRequest(SpaceChoice? Choice);
+
+public sealed record BuyRequest(int? Shares);
