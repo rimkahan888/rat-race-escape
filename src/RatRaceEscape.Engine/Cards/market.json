@@ -1,0 +1,66 @@
+[
+  {
+    "id": "pier-bid",
+    "kind": "offer",
+    "title": "Bid for North Pier",
+    "summary": "A locker company will pay forty dollars a share for North Pier Storage.",
+    "assetName": "PIER",
+    "perShare": true,
+    "offerCents": 4000
+  },
+  {
+    "id": "lumen-bid",
+    "kind": "offer",
+    "title": "Bid for Lumen Glass",
+    "summary": "A glazier will pay eighteen dollars a share for Lumen Glass.",
+    "assetName": "LUMEN",
+    "perShare": true,
+    "offerCents": 1800
+  },
+  {
+    "id": "cedar-lane-offer",
+    "kind": "offer",
+    "title": "Offer on Cedar Lane",
+    "summary": "A cabinet maker will pay two thousand five hundred dollars for the Cedar Lane Studio.",
+    "assetName": "Cedar Lane Studio",
+    "perShare": false,
+    "offerCents": 250000
+  },
+  {
+    "id": "kiln-and-clay-offer",
+    "kind": "offer",
+    "title": "Offer on Kiln and Clay",
+    "summary": "A potter will pay six thousand dollars for Kiln and Clay, note and all.",
+    "assetName": "Kiln and Clay",
+    "perShare": false,
+    "offerCents": 600000
+  },
+  {
+    "id": "extra-mill-shift",
+    "kind": "event",
+    "title": "Extra Mill Shift",
+    "summary": "The brickworks adds a shift. Every player collects two hundred dollars.",
+    "cashDeltaCents": 20000
+  },
+  {
+    "id": "storm-week",
+    "kind": "event",
+    "title": "Storm Week",
+    "summary": "A week of storms. Every player pays one hundred fifty dollars for repairs.",
+    "cashDeltaCents": -15000
+  },
+  {
+    "id": "harbor-festival",
+    "kind": "event",
+    "title": "Harbor Festival",
+    "summary": "The harbor festival fills the stalls. Every player collects one hundred dollars.",
+    "cashDeltaCents": 10000
+  },
+  {
+    "id": "slip-fee",
+    "kind": "event",
+    "title": "Slip Fee",
+    "summary": "The harbor raises the slip fee. Every player pays eighty dollars.",
+    "cashDeltaCents": -8000
+  }
+]
