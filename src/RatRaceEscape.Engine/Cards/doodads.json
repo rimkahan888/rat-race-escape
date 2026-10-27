@@ -1,0 +1,50 @@
+[
+  {
+    "id": "cracked-oven-door",
+    "title": "Cracked Oven Door",
+    "summary": "The bakery oven door cracks on a Tuesday. The repair is one hundred eighty dollars.",
+    "costCents": 18000
+  },
+  {
+    "id": "harbor-parking-fine",
+    "title": "Harbor Parking Fine",
+    "summary": "The harbor posts a fine for leaving the cart in the loading lane.",
+    "costCents": 4000
+  },
+  {
+    "id": "school-trip-fund",
+    "title": "School Trip Fund",
+    "summary": "The class trip needs a share from the household. The ask is one hundred twenty dollars.",
+    "costCents": 12000
+  },
+  {
+    "id": "burst-water-heater",
+    "title": "Burst Water Heater",
+    "summary": "The water heater gives out before breakfast. A replacement is three hundred fifty dollars.",
+    "costCents": 35000
+  },
+  {
+    "id": "phone-screen",
+    "title": "Phone Screen",
+    "summary": "A dropped phone needs a new screen. The shop wants ninety dollars.",
+    "costCents": 9000
+  },
+  {
+    "id": "vet-visit",
+    "title": "Unexpected Vet Visit",
+    "summary": "The clinic fits in an unexpected visit. The bill is two hundred twenty dollars.",
+    "costCents": 22000
+  },
+  {
+    "id": "train-fare-home",
+    "title": "Train Fare Home",
+    "summary": "The last ferry is cancelled. The train home costs sixty dollars.",
+    "costCents": 6000
+  },
+  {
+    "id": "roof-leak-patch",
+    "title": "Roof Leak Patch",
+    "summary": "A leak over the kitchen needs a patch before the next rain. The roofer wants four hundred dollars.",
+    "costCents": 40000
+  }
+]
