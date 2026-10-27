@@ -16,6 +16,9 @@
     <EmbeddedResource Include="Cards\big-deals.json">
       <LogicalName>RatRaceEscape.Engine.Cards.big-deals.json</LogicalName>
     </EmbeddedResource>
+    <EmbeddedResource Include="Cards\market.json">
+      <LogicalName>RatRaceEscape.Engine.Cards.market.json</LogicalName>
+    </EmbeddedResource>
   </ItemGroup>
 
 </Project>
