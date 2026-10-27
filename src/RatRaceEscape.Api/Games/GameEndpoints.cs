@@ -75,7 +75,7 @@ public static class GameEndpoints
         return Results.Ok(GameStateResponse.From(game));
     }
 
-    private static IResult StartGame(StartGameRequest? request, IGameRepository games)
+    private static IResult StartGame(StartGameRequest? request, IGameRepository games, IShuffle shuffle)
     {
         if (request is null)
         {
@@ -110,7 +110,7 @@ public static class GameEndpoints
 
         try
         {
-            Game game = Game.Create(setups);
+            Game game = Game.Create(setups, shuffle);
             games.Add(game);
             return Results.Created($"/games/{game.Id}", GameStateResponse.From(game));
         }

@@ -166,7 +166,7 @@ public class DownsizedTests
         Game game = Table();
         for (int turn = 0; turn < 6; turn++)
         {
-            game = game.Roll(new ScriptedDieRoller([6])).Resolve().EndTurn();
+            game = Play(game, 6);
         }
 
         return game.Roll(new ScriptedDieRoller([1]));
@@ -175,9 +175,14 @@ public class DownsizedTests
     private static Game Play(Game game, int face)
     {
         Game rolled = game.Roll(new ScriptedDieRoller([face]));
-        Game resolved = RatRaceBoard.At(rolled.CurrentPlayer.BoardIndex).Kind == SpaceKind.Charity
-            ? rolled.Resolve(SpaceChoice.Decline)
-            : rolled.Resolve();
+        SpaceKind kind = RatRaceBoard.At(rolled.CurrentPlayer.BoardIndex).Kind;
+        SpaceChoice choice = kind switch
+        {
+            SpaceKind.Charity => SpaceChoice.Decline,
+            SpaceKind.Deal => SpaceChoice.SmallDeal,
+            _ => SpaceChoice.None,
+        };
+        Game resolved = rolled.Resolve(choice);
         return resolved.EndTurn();
     }
 

@@ -83,6 +83,9 @@ public sealed class TurnApiTests : IClassFixture<RatRaceEscapeApiFactory>
 
         JsonElement hooked = await PostJsonAsync($"/games/{id}/resolve", """{ "choice": "None" }""");
         Assert.Equal("Doodad", hooked.GetProperty("pendingDeck").GetString());
+        Assert.Equal("cracked-oven-door", hooked.GetProperty("drawn").GetProperty("id").GetString());
+        Assert.Equal(18_000, hooked.GetProperty("drawn").GetProperty("costCents").GetInt64());
+        Assert.Equal(122_000, hooked.GetProperty("players")[1].GetProperty("cashCents").GetInt64());
         Assert.Equal("AwaitingEnd", hooked.GetProperty("turnPhase").GetString());
 
         JsonElement avaAgain = await PostEmptyAsync($"/games/{id}/end-turn");
@@ -99,7 +102,7 @@ public sealed class TurnApiTests : IClassFixture<RatRaceEscapeApiFactory>
         Assert.Equal(7, passedPay.GetProperty("lastRoll").GetProperty("total").GetInt32());
         Assert.Equal(125_000, ava.GetProperty("cashCents").GetInt64());
         Assert.Equal(2, ava.GetProperty("extraDieTurnsRemaining").GetInt32());
-        Assert.Equal(140_000, passedPay.GetProperty("players")[1].GetProperty("cashCents").GetInt64());
+        Assert.Equal(122_000, passedPay.GetProperty("players")[1].GetProperty("cashCents").GetInt64());
 
         JsonElement resolved = await PostEmptyAsync($"/games/{id}/resolve");
         Assert.Equal("Doodad", resolved.GetProperty("pendingDeck").GetString());
@@ -108,7 +111,7 @@ public sealed class TurnApiTests : IClassFixture<RatRaceEscapeApiFactory>
         Assert.Equal(JsonValueKind.Null, closed.GetProperty("pendingDeck").ValueKind);
 
         JsonElement fetched = await GetAsync(id);
-        Assert.Equal(125_000, fetched.GetProperty("players")[0].GetProperty("cashCents").GetInt64());
+        Assert.Equal(121_000, fetched.GetProperty("players")[0].GetProperty("cashCents").GetInt64());
         Assert.Equal(10, fetched.GetProperty("players")[0].GetProperty("boardIndex").GetInt32());
         Assert.Equal(2, fetched.GetProperty("players")[0].GetProperty("extraDieTurnsRemaining").GetInt32());
         Assert.Equal("AwaitingRoll", fetched.GetProperty("turnPhase").GetString());
@@ -157,7 +160,15 @@ public sealed class TurnApiTests : IClassFixture<RatRaceEscapeApiFactory>
         for (int turn = 0; turn < 6; turn++)
         {
             await PostEmptyAsync($"/games/{id}/roll");
-            await PostEmptyAsync($"/games/{id}/resolve");
+            if (turn == 3)
+            {
+                await PostJsonAsync($"/games/{id}/resolve", """{ "choice": "SmallDeal" }""");
+            }
+            else
+            {
+                await PostEmptyAsync($"/games/{id}/resolve");
+            }
+
             await PostEmptyAsync($"/games/{id}/end-turn");
         }
 

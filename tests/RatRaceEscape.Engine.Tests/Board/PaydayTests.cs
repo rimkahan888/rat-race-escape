@@ -29,7 +29,7 @@ public class PaydayTests
         Assert.Equal([6], passed.LastRoll!.Move.Paydays.Select(step => step.Index));
         Assert.Equal(Money.FromCents(63_000), passed.LastRoll.PaydayCash);
         Assert.Equal(Money.FromCents(153_000), passed.CurrentPlayer.Cash);
-        Assert.Equal(passed.CurrentPlayer.Cash, passed.Resolve().CurrentPlayer.Cash);
+        Assert.Equal(passed.CurrentPlayer.Cash, passed.Resolve(SpaceChoice.SmallDeal).CurrentPlayer.Cash);
     }
 
     [Fact]

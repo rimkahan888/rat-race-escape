@@ -9,6 +9,7 @@ public sealed record GameStateResponse(
     int CurrentTurnIndex,
     TurnRollResponse? LastRoll,
     string? PendingDeck,
+    DrawnCardResponse? Drawn,
     IReadOnlyList<PlayerStateResponse> Players)
 {
     public static GameStateResponse From(Game game)
@@ -56,7 +57,91 @@ public sealed record GameStateResponse(
             game.CurrentTurnIndex,
             lastRoll,
             game.PendingDeck?.ToString(),
+            DrawnCardResponse.From(game.Drawn),
             players);
+    }
+}
+
+public sealed record DrawnCardResponse(
+    string Deck,
+    string Id,
+    string Title,
+    string Summary,
+    string? Kind,
+    long? CostCents,
+    string? Symbol,
+    long? PricePerShareCents,
+    long? DividendPerShareCents,
+    long? DownPaymentCents,
+    long? LoanCents,
+    long? MonthlyCashFlowCents,
+    string? AssetName,
+    bool? PerShare,
+    long? PriceCents,
+    long? CashDeltaCents)
+{
+    public static DrawnCardResponse? From(DrawnCard? drawn)
+    {
+        if (drawn is null)
+        {
+            return null;
+        }
+
+        if (drawn.SmallDeal is SmallDeal small)
+        {
+            return small.Kind == SmallDealKind.Stock
+                ? Card(drawn, "Stock", symbol: small.Symbol, pricePerShare: small.PricePerShare, dividend: small.DividendPerShare)
+                : Card(drawn, "Property", downPayment: small.DownPayment, loan: small.Mortgage, cashFlow: small.MonthlyCashFlow);
+        }
+
+        if (drawn.BigDeal is BigDeal big)
+        {
+            string kind = big.Kind == BigDealKind.Business ? "Business" : "Property";
+            return Card(drawn, kind, downPayment: big.DownPayment, loan: big.Loan, cashFlow: big.MonthlyCashFlow);
+        }
+
+        if (drawn.Market is MarketCard market)
+        {
+            return market.Kind == MarketKind.Event
+                ? Card(drawn, "Event", cashDelta: market.CashDelta)
+                : Card(drawn, "Offer", assetName: market.AssetName, perShare: market.PerShare, price: market.Price);
+        }
+
+        return Card(drawn, kind: null, cost: drawn.Doodad!.Cost);
+    }
+
+    private static DrawnCardResponse Card(
+        DrawnCard drawn,
+        string? kind,
+        Money? cost = null,
+        string? symbol = null,
+        Money? pricePerShare = null,
+        Money? dividend = null,
+        Money? downPayment = null,
+        Money? loan = null,
+        Money? cashFlow = null,
+        string? assetName = null,
+        bool? perShare = null,
+        Money? price = null,
+        Money? cashDelta = null)
+    {
+        return new DrawnCardResponse(
+            drawn.Deck.ToString(),
+            drawn.Id,
+            drawn.Title,
+            drawn.Summary,
+            kind,
+            cost?.Cents,
+            symbol,
+            pricePerShare?.Cents,
+            dividend?.Cents,
+            downPayment?.Cents,
+            loan?.Cents,
+            cashFlow?.Cents,
+            assetName,
+            perShare,
+            price?.Cents,
+            cashDelta?.Cents);
     }
 }
 

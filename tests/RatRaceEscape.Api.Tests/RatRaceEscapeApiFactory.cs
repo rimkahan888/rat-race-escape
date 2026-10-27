@@ -18,6 +18,8 @@ public sealed class RatRaceEscapeApiFactory : WebApplicationFactory<Program>
         {
             services.RemoveAll<IDieRoller>();
             services.AddSingleton<IDieRoller>(Dice);
+            services.RemoveAll<IShuffle>();
+            services.AddSingleton<IShuffle, IdentityShuffle>();
         });
     }
 }
