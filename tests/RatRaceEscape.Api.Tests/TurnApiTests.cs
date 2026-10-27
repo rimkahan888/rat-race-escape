@@ -295,10 +295,175 @@ public sealed class TurnApiTests : IClassFixture<RatRaceEscapeApiFactory>
         Assert.Equal(1, game.GetProperty("players")[0].GetProperty("boardIndex").GetInt32());
     }
 
+    [Fact]
+    public async Task Buying_two_shares_records_the_lot_and_discards_the_stock()
+    {
+        Guid id = Id(await StartAsync(OnePlayer("Ava", "night-baker", "Amber")));
+        _factory.Dice.Enqueue(2);
+
+        await PostEmptyAsync($"/games/{id}/roll");
+        JsonElement offered = await PostJsonAsync($"/games/{id}/resolve", """{ "choice": "SmallDeal" }""");
+        Assert.Equal("lumen-glass", offered.GetProperty("drawn").GetProperty("id").GetString());
+        Assert.Equal(0, offered.GetProperty("players")[0].GetProperty("stocks").GetArrayLength());
+
+        await AssertConflict($"/games/{id}/buy", "{}", "Stock purchases need a share count.");
+        JsonElement still = await GetAsync(id);
+        Assert.Equal("lumen-glass", still.GetProperty("drawn").GetProperty("id").GetString());
+        Assert.Equal(90_000, still.GetProperty("players")[0].GetProperty("cashCents").GetInt64());
+
+        JsonElement bought = await PostJsonAsync($"/games/{id}/buy", """{ "shares": 2 }""");
+        JsonElement player = bought.GetProperty("players")[0];
+        JsonElement lot = player.GetProperty("stocks")[0];
+        Assert.Equal(JsonValueKind.Null, bought.GetProperty("drawn").ValueKind);
+        Assert.Equal(JsonValueKind.Null, bought.GetProperty("pendingDeck").ValueKind);
+        Assert.Equal("AwaitingEnd", bought.GetProperty("turnPhase").GetString());
+        Assert.Equal(88_000, player.GetProperty("cashCents").GetInt64());
+        Assert.Equal(90_000, player.GetProperty("totalAssetsCents").GetInt64());
+        Assert.Equal(0, player.GetProperty("passiveIncomeCents").GetInt64());
+        Assert.Equal("LUMEN", lot.GetProperty("symbol").GetString());
+        Assert.Equal(2, lot.GetProperty("shares").GetInt32());
+        Assert.Equal(1_000, lot.GetProperty("costPerShareCents").GetInt64());
+        Assert.Equal(0, lot.GetProperty("dividendPerShareCents").GetInt64());
+        Assert.Equal(0, player.GetProperty("realEstate").GetArrayLength());
+        Assert.Equal(0, player.GetProperty("businesses").GetArrayLength());
+
+        JsonElement closed = await PostEmptyAsync($"/games/{id}/end-turn");
+        Assert.Equal(2, closed.GetProperty("players")[0].GetProperty("stocks")[0].GetProperty("shares").GetInt32());
+        Assert.Equal(JsonValueKind.Null, closed.GetProperty("drawn").ValueKind);
+        await AssertConflict($"/games/{id}/buy", """{ "shares": 1 }""", "Roll the dice before buying.");
+    }
+
+    [Fact]
+    public async Task Buying_a_big_deal_property_adds_the_mortgage_and_the_cash_flow()
+    {
+        Guid id = Id(await StartAsync(OnePlayer("Nia", "reef-surveyor", "Violet")));
+        _factory.Dice.Enqueue(2);
+
+        await PostEmptyAsync($"/games/{id}/roll");
+        JsonElement offered = await PostJsonAsync($"/games/{id}/resolve", """{ "choice": "BigDeal" }""");
+        Assert.Equal("brickworks-lofts", offered.GetProperty("drawn").GetProperty("id").GetString());
+        long liabilities = offered.GetProperty("players")[0].GetProperty("totalLiabilitiesCents").GetInt64();
+
+        await AssertConflict($"/games/{id}/buy", """{ "shares": 1 }""", "This offer is not sold in shares.");
+        JsonElement bought = await PostEmptyAsync($"/games/{id}/buy");
+        JsonElement player = bought.GetProperty("players")[0];
+        JsonElement property = player.GetProperty("realEstate")[0];
+
+        Assert.Equal(JsonValueKind.Null, bought.GetProperty("drawn").ValueKind);
+        Assert.Equal(140_000, player.GetProperty("cashCents").GetInt64());
+        Assert.Equal(540_000, player.GetProperty("totalAssetsCents").GetInt64());
+        Assert.Equal(liabilities + 2_800_000, player.GetProperty("totalLiabilitiesCents").GetInt64());
+        Assert.Equal(22_000, player.GetProperty("passiveIncomeCents").GetInt64());
+        Assert.Equal(114_000, player.GetProperty("monthlyCashFlowCents").GetInt64());
+        Assert.Equal("Brickworks Lofts", property.GetProperty("name").GetString());
+        Assert.Equal(400_000, property.GetProperty("costCents").GetInt64());
+        Assert.Equal(2_800_000, property.GetProperty("mortgageCents").GetInt64());
+        Assert.Equal(22_000, property.GetProperty("monthlyCashFlowCents").GetInt64());
+        Assert.Equal(0, player.GetProperty("businesses").GetArrayLength());
+        Assert.Equal(0, player.GetProperty("stocks").GetArrayLength());
+    }
+
+    [Fact]
+    public async Task A_down_payment_the_player_cannot_cover_leaves_the_offer()
+    {
+        Guid id = Id(await StartAsync(OnePlayer("Ava", "night-baker", "Amber")));
+        _factory.Dice.Enqueue(2);
+
+        await PostEmptyAsync($"/games/{id}/roll");
+        await PostJsonAsync($"/games/{id}/resolve", """{ "choice": "BigDeal" }""");
+        await AssertConflict($"/games/{id}/buy", null, "Cash cannot cover the down payment.");
+
+        JsonElement stuck = await GetAsync(id);
+        Assert.Equal("brickworks-lofts", stuck.GetProperty("drawn").GetProperty("id").GetString());
+        Assert.Equal("AwaitingEnd", stuck.GetProperty("turnPhase").GetString());
+        Assert.Equal(90_000, stuck.GetProperty("players")[0].GetProperty("cashCents").GetInt64());
+        Assert.Equal(0, stuck.GetProperty("players")[0].GetProperty("realEstate").GetArrayLength());
+    }
+
+    [Fact]
+    public async Task Passing_a_market_card_or_a_paid_bill_clears_it()
+    {
+        Guid id = Id(await StartAsync(OnePlayer("Ava", "night-baker", "Amber")));
+        _factory.Dice.Enqueue(5);
+
+        await PostEmptyAsync($"/games/{id}/roll");
+        JsonElement offered = await PostEmptyAsync($"/games/{id}/resolve");
+        Assert.Equal("pier-bid", offered.GetProperty("drawn").GetProperty("id").GetString());
+
+        JsonElement passed = await PostEmptyAsync($"/games/{id}/pass");
+        Assert.Equal(JsonValueKind.Null, passed.GetProperty("drawn").ValueKind);
+        Assert.Equal("AwaitingEnd", passed.GetProperty("turnPhase").GetString());
+        Assert.Equal(90_000, passed.GetProperty("players")[0].GetProperty("cashCents").GetInt64());
+        await AssertConflict($"/games/{id}/pass", null, "There is no card to pass.");
+
+        await PostEmptyAsync($"/games/{id}/end-turn");
+        _factory.Dice.Enqueue(5);
+        JsonElement landed = await PostEmptyAsync($"/games/{id}/roll");
+        Assert.Equal(10, landed.GetProperty("players")[0].GetProperty("boardIndex").GetInt32());
+        Assert.Equal(153_000, landed.GetProperty("players")[0].GetProperty("cashCents").GetInt64());
+
+        JsonElement billed = await PostEmptyAsync($"/games/{id}/resolve");
+        Assert.Equal("cracked-oven-door", billed.GetProperty("drawn").GetProperty("id").GetString());
+        Assert.Equal(135_000, billed.GetProperty("players")[0].GetProperty("cashCents").GetInt64());
+
+        JsonElement paid = await PostEmptyAsync($"/games/{id}/pass");
+        Assert.Equal(JsonValueKind.Null, paid.GetProperty("drawn").ValueKind);
+        Assert.Equal(135_000, paid.GetProperty("players")[0].GetProperty("cashCents").GetInt64());
+        await AssertConflict($"/games/{id}/buy", null, "There is no offer to buy.");
+    }
+
+    [Fact]
+    public async Task Buying_a_business_after_passing_the_earlier_big_deals_adds_the_note()
+    {
+        Guid id = Id(await StartAsync(OnePlayer("Nia", "reef-surveyor", "Violet")));
+        _factory.Dice.Enqueue(2, 2, 3, 2, 2, 3);
+
+        for (int deal = 0; deal < 5; deal++)
+        {
+            await PostEmptyAsync($"/games/{id}/roll");
+            await PostJsonAsync($"/games/{id}/resolve", """{ "choice": "BigDeal" }""");
+            await PostEmptyAsync($"/games/{id}/pass");
+            await PostEmptyAsync($"/games/{id}/end-turn");
+        }
+
+        await PostEmptyAsync($"/games/{id}/roll");
+        JsonElement offered = await PostJsonAsync($"/games/{id}/resolve", """{ "choice": "BigDeal" }""");
+        Assert.Equal("kiln-and-clay", offered.GetProperty("drawn").GetProperty("id").GetString());
+        long cash = offered.GetProperty("players")[0].GetProperty("cashCents").GetInt64();
+        long liabilities = offered.GetProperty("players")[0].GetProperty("totalLiabilitiesCents").GetInt64();
+        long monthly = offered.GetProperty("players")[0].GetProperty("monthlyCashFlowCents").GetInt64();
+
+        JsonElement bought = await PostEmptyAsync($"/games/{id}/buy");
+        JsonElement player = bought.GetProperty("players")[0];
+        JsonElement business = player.GetProperty("businesses")[0];
+        Assert.Equal("Kiln and Clay", business.GetProperty("name").GetString());
+        Assert.Equal(300_000, business.GetProperty("costCents").GetInt64());
+        Assert.Equal(0, business.GetProperty("liabilityCents").GetInt64());
+        Assert.Equal(18_000, business.GetProperty("monthlyCashFlowCents").GetInt64());
+        Assert.Equal(cash - 300_000, player.GetProperty("cashCents").GetInt64());
+        Assert.Equal(liabilities, player.GetProperty("totalLiabilitiesCents").GetInt64());
+        Assert.Equal(18_000, player.GetProperty("passiveIncomeCents").GetInt64());
+        Assert.Equal(monthly + 18_000, player.GetProperty("monthlyCashFlowCents").GetInt64());
+        Assert.Equal(0, player.GetProperty("realEstate").GetArrayLength());
+        Assert.Equal(JsonValueKind.Null, bought.GetProperty("drawn").ValueKind);
+    }
+
+    [Fact]
+    public async Task Buy_and_pass_before_a_roll_are_conflicts()
+    {
+        Guid id = Id(await StartAsync(OnePlayer("Ava", "night-baker", "Amber")));
+
+        await AssertConflict($"/games/{id}/buy", null, "Roll the dice before buying.");
+        await AssertConflict($"/games/{id}/pass", null, "Roll the dice before passing.");
+        Assert.Equal("AwaitingRoll", (await GetAsync(id)).GetProperty("turnPhase").GetString());
+    }
+
     [Theory]
     [InlineData("roll")]
     [InlineData("resolve")]
     [InlineData("end-turn")]
+    [InlineData("buy")]
+    [InlineData("pass")]
     public async Task Turn_actions_return_404_when_the_game_is_unknown(string action)
     {
         await AssertNotFound($"/games/{Guid.NewGuid()}/{action}");
