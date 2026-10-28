@@ -61,15 +61,16 @@ public class FastTrackTests
     }
 
     [Fact]
-    public void A_dream_listing_is_acknowledged_until_someone_buys_it()
+    public void A_dream_listing_asks_for_a_claim_or_a_decline()
     {
-        Game landed = Bought().LeaveRatRace().EndTurn().Roll(new ScriptedDieRoller([3])).Resolve();
+        Game landed = Bought().LeaveRatRace().EndTurn().Roll(new ScriptedDieRoller([3]));
 
         Assert.Equal(FastTrackKind.Dream, FastTrackBoard.At(landed.CurrentPlayer.BoardIndex).Kind);
-        Assert.Equal("Dream Listing", FastTrackBoard.At(3).Title);
+        TurnException missing = Assert.Throws<TurnException>(() => landed.Resolve());
+
+        Assert.Contains("A dream listing needs a claim or a decline.", missing.Errors);
+        Assert.Equal(TurnPhase.AwaitingResolve, landed.TurnPhase);
         Assert.Equal(Money.FromDollars(899), landed.CurrentPlayer.Cash);
-        Assert.Equal(TurnPhase.AwaitingEnd, landed.TurnPhase);
-        Assert.Equal(GamePhase.RatRace, landed.Phase);
     }
 
     [Fact]
