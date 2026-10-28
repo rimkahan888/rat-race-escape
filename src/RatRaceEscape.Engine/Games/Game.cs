@@ -191,4 +191,17 @@ public sealed partial class Game
         errors.Add($"No profession with id '{professionId}'.");
         return null;
     }
+
+    private void RequireAction()
+    {
+        if (Phase == GamePhase.Over)
+        {
+            throw new TurnException("The game is already over.");
+        }
+
+        if (CurrentPlayer.IsBankrupt)
+        {
+            throw new TurnException("A bankrupt player cannot take that action.");
+        }
+    }
 }
