@@ -22,6 +22,11 @@ public sealed partial class Game
                     : "Roll the dice before settling.");
         }
 
+        if (CurrentPlayer.Track == BoardTrack.FastTrack)
+        {
+            return SettleFastTrack();
+        }
+
         BoardSpace space = RatRaceBoard.At(CurrentPlayer.BoardIndex);
         if (space.Kind == SpaceKind.Downsized)
         {
@@ -34,6 +39,23 @@ public sealed partial class Game
         }
 
         throw new TurnException("This space has no expense to settle.");
+    }
+
+    private Game SettleFastTrack()
+    {
+        FastTrackSpace space = FastTrackBoard.At(CurrentPlayer.BoardIndex);
+        if (space.Kind != FastTrackKind.Setback)
+        {
+            throw new TurnException("This space has no expense to settle.");
+        }
+
+        if (CurrentPlayer.Cash >= FastTrackBoard.Setback)
+        {
+            throw new TurnException("Cash covers this expense.");
+        }
+
+        Player covered = Shortfall.Cover(CurrentPlayer, FastTrackBoard.Setback);
+        return WithPlayer(covered, TurnPhase.AwaitingEnd, LastRoll, pendingDeck: null, drawn: null, Piles);
     }
 
     private Game SettleDownsized()

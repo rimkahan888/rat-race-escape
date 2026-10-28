@@ -6,7 +6,7 @@ public sealed partial class Game
     /// Rolls one die for the current player, or two while charity dice remain.
     /// Using the turn spends one charity die whether the player rolls one or two.
     /// Each payday the token lands on or passes pays that player's monthly cash flow once.
-    /// The landed square is not resolved yet.
+    /// On the fast track, a payday pays passive income only. The landed square is not resolved yet.
     /// </summary>
     public Game Roll(IDieRoller roller, int dieCount = 1)
     {
@@ -33,6 +33,11 @@ public sealed partial class Game
 
         int extraDieTurns = CurrentPlayer.ExtraDieTurnsRemaining;
         DiceRoll dice = Dice.Roll(roller, dieCount);
+        if (CurrentPlayer.Track == BoardTrack.FastTrack)
+        {
+            return RollFastTrack(dice, extraDieTurns);
+        }
+
         int fromIndex = CurrentPlayer.BoardIndex;
         TrackMove move = RatRaceTrack.Move(fromIndex, dice.Total);
         Player paid = Payday.Collect(CurrentPlayer, move.Paydays.Count);
@@ -44,6 +49,65 @@ public sealed partial class Game
         }
 
         return WithPlayer(moved, TurnPhase.AwaitingResolve, roll, pendingDeck: null, drawn: null, Piles);
+    }
+
+    private Game RollFastTrack(DiceRoll dice, int extraDieTurns)
+    {
+        int fromIndex = CurrentPlayer.BoardIndex;
+        FastTrackMove move = FastTrackBoard.Move(fromIndex, dice.Total);
+        Player paid = CollectFastPayday(CurrentPlayer, move.Paydays);
+        TurnRoll roll = new(dice, fromIndex, move.ToIndex, paid.Cash - CurrentPlayer.Cash);
+        Player moved = paid.WithBoardIndex(move.ToIndex);
+        if (extraDieTurns > 0)
+        {
+            moved = moved.WithExtraDieTurns(extraDieTurns - 1);
+        }
+
+        return WithPlayer(moved, TurnPhase.AwaitingResolve, roll, pendingDeck: null, drawn: null, Piles);
+    }
+
+    private static Player CollectFastPayday(Player player, int paydayCount)
+    {
+        if (paydayCount == 0)
+        {
+            return player;
+        }
+
+        Money change = IncomeStatement.For(player).PassiveIncome * paydayCount;
+        if (change.IsNegative && player.Cash < change.Negate())
+        {
+            throw new TurnException("Cash cannot cover the fast-track distribution.");
+        }
+
+        return player.WithCash(player.Cash + change);
+    }
+
+    private Game ResolveFastTrack(SpaceChoice choice)
+    {
+        FastTrackSpace space = FastTrackBoard.At(CurrentPlayer.BoardIndex);
+        if (choice != SpaceChoice.None)
+        {
+            throw new TurnException("This space does not take a choice.");
+        }
+
+        if (space.Kind == FastTrackKind.Windfall)
+        {
+            Player paid = CurrentPlayer.WithCash(CurrentPlayer.Cash + FastTrackBoard.Windfall);
+            return WithPlayer(paid, TurnPhase.AwaitingEnd, LastRoll, pendingDeck: null, drawn: null, Piles);
+        }
+
+        if (space.Kind == FastTrackKind.Setback)
+        {
+            if (CurrentPlayer.Cash < FastTrackBoard.Setback)
+            {
+                throw new TurnException("Cash cannot cover the dry dock.");
+            }
+
+            Player payer = CurrentPlayer.WithCash(CurrentPlayer.Cash - FastTrackBoard.Setback);
+            return WithPlayer(payer, TurnPhase.AwaitingEnd, LastRoll, pendingDeck: null, drawn: null, Piles);
+        }
+
+        return WithTurn(CurrentTurnIndex, TurnPhase.AwaitingEnd, LastRoll, pendingDeck: null, drawn: null, Piles);
     }
 
     /// <summary>
@@ -69,6 +133,11 @@ public sealed partial class Game
         if (!Enum.IsDefined(choice))
         {
             throw new TurnException("The space choice is not one this turn understands.");
+        }
+
+        if (CurrentPlayer.Track == BoardTrack.FastTrack)
+        {
+            return ResolveFastTrack(choice);
         }
 
         BoardSpace space = RatRaceBoard.At(CurrentPlayer.BoardIndex);

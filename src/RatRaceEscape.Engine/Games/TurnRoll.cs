@@ -5,6 +5,8 @@ namespace RatRaceEscape.Engine;
 /// </summary>
 public sealed class TurnRoll
 {
+    private readonly int? _toIndex;
+
     public TurnRoll(DiceRoll dice, int fromIndex, Money paydayCash)
     {
         ArgumentNullException.ThrowIfNull(dice);
@@ -14,8 +16,23 @@ public sealed class TurnRoll
         PaydayCash = paydayCash;
     }
 
+    public TurnRoll(DiceRoll dice, int fromIndex, int toIndex, Money paydayCash)
+        : this(dice, fromIndex, paydayCash)
+    {
+        if (toIndex < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(toIndex), "Board index cannot be negative.");
+        }
+
+        _toIndex = toIndex;
+    }
+
     public DiceRoll Dice { get; }
 
+    /// <summary>
+    /// The walk as it would look on the rat race. On the fast track,
+    /// <see cref="ToIndex"/> is the square actually reached.
+    /// </summary>
     public TrackMove Move { get; }
 
     public IReadOnlyList<int> Faces => Dice.Faces;
@@ -24,7 +41,7 @@ public sealed class TurnRoll
 
     public int FromIndex => Move.FromIndex;
 
-    public int ToIndex => Move.ToIndex;
+    public int ToIndex => _toIndex ?? Move.ToIndex;
 
     /// <summary>
     /// Cash collected for the paydays on this roll, or the shortfall that was paid
