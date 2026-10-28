@@ -14,6 +14,8 @@ public static class FastTrackBoard
 
     public static readonly Money Setback = Money.FromDollars(300);
 
+    public static readonly Money DreamPrice = Money.FromDollars(5_000);
+
     private const string PayTitle = "Distribution Desk";
 
     private const string PaySummary = "Passive income is paid out for the month.";

@@ -20,7 +20,8 @@ public sealed partial class Game
         TurnRoll? lastRoll,
         DeckHook? pendingDeck,
         CardPiles piles,
-        DrawnCard? drawn)
+        DrawnCard? drawn,
+        int? winnerIndex = null)
     {
         ArgumentNullException.ThrowIfNull(piles);
         Id = id;
@@ -32,6 +33,7 @@ public sealed partial class Game
         PendingDeck = pendingDeck;
         Piles = piles;
         Drawn = drawn;
+        WinnerIndex = winnerIndex;
     }
 
     public Guid Id { get; }
@@ -41,6 +43,12 @@ public sealed partial class Game
     public int CurrentTurnIndex { get; }
 
     public GamePhase Phase { get; }
+
+    /// <summary>
+    /// The player who bought a dream on the fast track, or null while the
+    /// table is still playing.
+    /// </summary>
+    public int? WinnerIndex { get; }
 
     /// <summary>
     /// Where this turn is. A new game is waiting for the first player to roll.
@@ -194,7 +202,7 @@ public sealed partial class Game
 
     private void RequireAction()
     {
-        if (Phase == GamePhase.Over)
+        if (Phase is GamePhase.Over or GamePhase.Won)
         {
             throw new TurnException("The game is already over.");
         }

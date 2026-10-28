@@ -85,6 +85,11 @@ public sealed partial class Game
     private Game ResolveFastTrack(SpaceChoice choice)
     {
         FastTrackSpace space = FastTrackBoard.At(CurrentPlayer.BoardIndex);
+        if (space.Kind == FastTrackKind.Dream)
+        {
+            return ResolveDream(choice);
+        }
+
         if (choice != SpaceChoice.None)
         {
             throw new TurnException("This space does not take a choice.");
@@ -108,6 +113,39 @@ public sealed partial class Game
         }
 
         return WithTurn(CurrentTurnIndex, TurnPhase.AwaitingEnd, LastRoll, pendingDeck: null, drawn: null, Piles);
+    }
+
+    private Game ResolveDream(SpaceChoice choice)
+    {
+        if (choice == SpaceChoice.Decline)
+        {
+            return WithTurn(CurrentTurnIndex, TurnPhase.AwaitingEnd, LastRoll, pendingDeck: null, drawn: null, Piles);
+        }
+
+        if (choice != SpaceChoice.ClaimDream)
+        {
+            throw new TurnException("A dream listing needs a claim or a decline.");
+        }
+
+        if (CurrentPlayer.Cash < FastTrackBoard.DreamPrice)
+        {
+            throw new TurnException("Cash cannot cover the dream.");
+        }
+
+        Player buyer = CurrentPlayer.WithCash(CurrentPlayer.Cash - FastTrackBoard.DreamPrice);
+        Player[] players = Players.ToArray();
+        players[CurrentTurnIndex] = buyer;
+        return new Game(
+            Id,
+            players,
+            CurrentTurnIndex,
+            GamePhase.Won,
+            TurnPhase.AwaitingEnd,
+            LastRoll,
+            pendingDeck: null,
+            Piles,
+            drawn: null,
+            CurrentTurnIndex);
     }
 
     /// <summary>
@@ -270,7 +308,7 @@ public sealed partial class Game
     /// </summary>
     public Game EndTurn()
     {
-        if (Phase == GamePhase.Over)
+        if (Phase is GamePhase.Over or GamePhase.Won)
         {
             throw new TurnException("The game is already over.");
         }
@@ -295,7 +333,8 @@ public sealed partial class Game
                 lastRoll: null,
                 pendingDeck: null,
                 piles,
-                drawn: null);
+                drawn: null,
+                WinnerIndex);
         }
 
         Player[] players = Players.ToArray();
@@ -340,7 +379,8 @@ public sealed partial class Game
             lastRoll: null,
             pendingDeck: null,
             piles,
-            drawn: null);
+            drawn: null,
+            WinnerIndex);
     }
 
     private static bool AnySolvent(IReadOnlyList<Player> players)
@@ -396,7 +436,7 @@ public sealed partial class Game
     {
         Player[] players = Players.ToArray();
         players[CurrentTurnIndex] = player;
-        return new Game(Id, players, CurrentTurnIndex, Phase, turnPhase, lastRoll, pendingDeck, piles, drawn);
+        return new Game(Id, players, CurrentTurnIndex, Phase, turnPhase, lastRoll, pendingDeck, piles, drawn, WinnerIndex);
     }
 
     private Game WithTurn(
@@ -407,6 +447,6 @@ public sealed partial class Game
         DrawnCard? drawn,
         CardPiles piles)
     {
-        return new Game(Id, Players, currentTurnIndex, Phase, turnPhase, lastRoll, pendingDeck, piles, drawn);
+        return new Game(Id, Players, currentTurnIndex, Phase, turnPhase, lastRoll, pendingDeck, piles, drawn, WinnerIndex);
     }
 }
