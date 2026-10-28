@@ -4,7 +4,7 @@ namespace RatRaceEscape.Engine;
 /// One card in the market deck. An offer names the asset a buyer wants and
 /// the price, per share or for the whole thing. An event moves every player's
 /// cash by the same amount, positive when the table collects and negative
-/// when the table pays.
+/// when the table pays. A split names a stock that doubles for every holder.
 /// </summary>
 public sealed class MarketCard
 {
@@ -38,7 +38,7 @@ public sealed class MarketCard
 
     /// <summary>
     /// The stock symbol, or the property or business name, a buyer wants.
-    /// Null on an event.
+    /// A split names the stock symbol. Null on a cash event.
     /// </summary>
     public string? AssetName { get; }
 
@@ -69,6 +69,12 @@ public sealed class MarketCard
         return Create(id, MarketKind.Event, title, summary, assetName: null, perShare: false, Money.Zero, cashDelta);
     }
 
+    public static MarketCard Split(string id, string title, string summary, string symbol)
+    {
+        ArgumentNullException.ThrowIfNull(symbol);
+        return Create(id, MarketKind.Split, title, summary, symbol, perShare: false, Money.Zero, Money.Zero);
+    }
+
     public static MarketCard Create(
         string id,
         MarketKind kind,
@@ -91,15 +97,19 @@ public sealed class MarketCard
 
         if (!Enum.IsDefined(kind))
         {
-            errors.Add("Market kind is not an offer or an event.");
+            errors.Add("Market kind is not an offer, an event, or a split.");
         }
         else if (kind == MarketKind.Offer)
         {
             trimmedAsset = RequireOffer(errors, trimmedAsset, perShare, offer, cashDelta);
         }
-        else
+        else if (kind == MarketKind.Event)
         {
             RequireEvent(errors, trimmedAsset, perShare, offer, cashDelta);
+        }
+        else
+        {
+            trimmedAsset = RequireSplit(errors, trimmedAsset, perShare, offer, cashDelta);
         }
 
         if (errors.Count > 0)
@@ -169,6 +179,37 @@ public sealed class MarketCard
         {
             errors.Add("An event must change everyone's cash.");
         }
+    }
+
+    private static string? RequireSplit(
+        List<string> errors,
+        string? assetName,
+        bool perShare,
+        Money offer,
+        Money cashDelta)
+    {
+        assetName = assetName?.ToUpperInvariant();
+        if (assetName is null || !IsSymbol(assetName))
+        {
+            errors.Add("A stock split needs a stock symbol.");
+        }
+
+        if (perShare)
+        {
+            errors.Add("A stock split is not priced per share.");
+        }
+
+        if (!offer.IsZero)
+        {
+            errors.Add("A stock split does not name an offer price.");
+        }
+
+        if (!cashDelta.IsZero)
+        {
+            errors.Add("A stock split does not change everyone's cash.");
+        }
+
+        return assetName;
     }
 
     private static bool IsSymbol(string symbol)

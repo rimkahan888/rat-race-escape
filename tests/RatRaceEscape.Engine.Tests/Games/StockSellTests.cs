@@ -135,10 +135,11 @@ public class StockSellTests
     private static Game CutSmall(string smallDealId)
     {
         int[] keep = [0, 1, 2, 3, 4, 5, 6, 7];
+        int[] market = Enumerable.Range(0, MarketCatalog.All.Count).ToArray();
         return Game.Create(
             GameId,
             [new PlayerSetup("Ava", "night-baker", TokenColour.Amber)],
-            new ScriptedShuffle(Promote(SmallDealCatalog.All, smallDealId), keep, keep, keep));
+            new ScriptedShuffle(Promote(SmallDealCatalog.All, smallDealId), keep, market, keep));
     }
 
     private static Game CutMarket(string marketId)

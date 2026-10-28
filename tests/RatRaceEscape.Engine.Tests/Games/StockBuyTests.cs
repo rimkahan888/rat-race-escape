@@ -114,9 +114,10 @@ public class StockBuyTests
         }
 
         int[] keep = [0, 1, 2, 3, 4, 5, 6, 7];
+        int[] market = Enumerable.Range(0, MarketCatalog.All.Count).ToArray();
         return Game.Create(
             GameId,
             [new PlayerSetup("Ava", "night-baker", TokenColour.Amber)],
-            new ScriptedShuffle(order, keep, keep, keep));
+            new ScriptedShuffle(order, keep, market, keep));
     }
 }

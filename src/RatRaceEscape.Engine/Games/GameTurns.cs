@@ -157,13 +157,24 @@ public sealed partial class Game
     private Game DrawMarket()
     {
         DeckDraw<MarketCard> drawn = Piles.Market.Draw();
-        return WithTurn(
+        CardPiles piles = Piles.WithMarket(drawn.Deck);
+        IReadOnlyList<Player> players = drawn.Card.Kind switch
+        {
+            MarketKind.Event => MarketEvent.Apply(Players, drawn.Card.CashDelta),
+            MarketKind.Split => StockSplit.ApplyAll(Players, drawn.Card.AssetName!),
+            _ => Players,
+        };
+
+        return new Game(
+            Id,
+            players,
             CurrentTurnIndex,
+            Phase,
             TurnPhase.AwaitingEnd,
             LastRoll,
             DeckHook.Market,
-            DrawnCard.From(drawn.Card),
-            Piles.WithMarket(drawn.Deck));
+            piles,
+            DrawnCard.From(drawn.Card));
     }
 
     private Game DrawDoodad()

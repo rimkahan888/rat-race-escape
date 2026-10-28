@@ -62,5 +62,19 @@
     "title": "Slip Fee",
     "summary": "The harbor raises the slip fee. Every player pays eighty dollars.",
     "cashDeltaCents": -8000
+  },
+  {
+    "id": "pier-split",
+    "kind": "split",
+    "title": "North Pier splits",
+    "summary": "North Pier Storage splits two for one. Every holder doubles those shares.",
+    "assetName": "PIER"
+  },
+  {
+    "id": "lumen-split",
+    "kind": "split",
+    "title": "Lumen Glass splits",
+    "summary": "Lumen Glass splits two for one. Every holder doubles those shares.",
+    "assetName": "LUMEN"
   }
 ]
