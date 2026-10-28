@@ -156,11 +156,12 @@ public class CardTurnTests
     public void A_scripted_shuffle_cuts_the_small_deals_before_the_other_decks()
     {
         int[] keep = [0, 1, 2, 3, 4, 5, 6, 7];
+        int[] market = Enumerable.Range(0, MarketCatalog.All.Count).ToArray();
         int[] swap = [1, 0, 2, 3, 4, 5, 6, 7];
         Game game = Game.Create(
             GameId,
             [new PlayerSetup("Ava", "night-baker", TokenColour.Amber)],
-            new ScriptedShuffle(swap, keep, keep, keep));
+            new ScriptedShuffle(swap, keep, market, keep));
 
         Game drawn = game.Roll(new ScriptedDieRoller([2])).Resolve(SpaceChoice.SmallDeal);
 

@@ -230,19 +230,21 @@ public class AssetBuyTests
     private static Game CutSmall(string smallDealId, string name, string profession, TokenColour colour)
     {
         int[] keep = [0, 1, 2, 3, 4, 5, 6, 7];
+        int[] market = Enumerable.Range(0, MarketCatalog.All.Count).ToArray();
         return Game.Create(
             GameId,
             [new PlayerSetup(name, profession, colour)],
-            new ScriptedShuffle(Promote(SmallDealCatalog.All, smallDealId), keep, keep, keep));
+            new ScriptedShuffle(Promote(SmallDealCatalog.All, smallDealId), keep, market, keep));
     }
 
     private static Game CutBig(string bigDealId, string name, string profession, TokenColour colour)
     {
         int[] keep = [0, 1, 2, 3, 4, 5, 6, 7];
+        int[] market = Enumerable.Range(0, MarketCatalog.All.Count).ToArray();
         return Game.Create(
             GameId,
             [new PlayerSetup(name, profession, colour)],
-            new ScriptedShuffle(keep, Promote(BigDealCatalog.All, bigDealId), keep, keep));
+            new ScriptedShuffle(keep, Promote(BigDealCatalog.All, bigDealId), market, keep));
     }
 
     private static int[] Promote<T>(IReadOnlyList<T> cards, string id)

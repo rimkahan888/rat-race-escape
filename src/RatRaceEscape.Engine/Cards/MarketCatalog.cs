@@ -5,8 +5,8 @@ namespace RatRaceEscape.Engine;
 
 /// <summary>
 /// The market deck shipped with the game: offers for assets a player may own,
-/// and events that change every player's cash. Amounts in the embedded file
-/// are integer cents. Every entry is passed through <see cref="MarketCard.Create"/>.
+/// events that change every player's cash, and stock splits. Amounts in the
+/// embedded file are integer cents. Every entry is passed through <see cref="MarketCard.Create"/>.
 /// </summary>
 public static class MarketCatalog
 {
@@ -112,15 +112,17 @@ public static class MarketCatalog
             }
 
             string kind = Kind.Trim();
-            if (!kind.Equals("offer", StringComparison.OrdinalIgnoreCase)
-                && !kind.Equals("event", StringComparison.OrdinalIgnoreCase))
+            MarketKind parsed = kind.ToLowerInvariant() switch
             {
-                throw new JsonException($"Market kind '{Kind}' is not an offer or an event.");
-            }
+                "offer" => MarketKind.Offer,
+                "event" => MarketKind.Event,
+                "split" => MarketKind.Split,
+                _ => throw new JsonException($"Market kind '{Kind}' is not an offer, an event, or a split."),
+            };
 
             return MarketCard.Create(
                 Id!,
-                kind.Equals("offer", StringComparison.OrdinalIgnoreCase) ? MarketKind.Offer : MarketKind.Event,
+                parsed,
                 Title!,
                 Summary!,
                 AssetName,

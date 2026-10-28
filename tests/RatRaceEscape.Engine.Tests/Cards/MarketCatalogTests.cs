@@ -14,6 +14,8 @@ public class MarketCatalogTests
         "storm-week",
         "harbor-festival",
         "slip-fee",
+        "pier-split",
+        "lumen-split",
     ];
 
     [Fact]
@@ -27,6 +29,7 @@ public class MarketCatalogTests
     {
         Assert.Equal(4, MarketCatalog.All.Count(card => card.Kind == MarketKind.Offer));
         Assert.Equal(4, MarketCatalog.All.Count(card => card.Kind == MarketKind.Event));
+        Assert.Equal(2, MarketCatalog.All.Count(card => card.Kind == MarketKind.Split));
 
         foreach (MarketCard card in MarketCatalog.All)
         {
@@ -37,6 +40,15 @@ public class MarketCatalogTests
             {
                 Assert.False(card.CashDelta.IsZero);
                 Assert.Null(card.AssetName);
+                continue;
+            }
+
+            if (card.Kind == MarketKind.Split)
+            {
+                Assert.True(card.CashDelta.IsZero);
+                Assert.True(card.Price.IsZero);
+                Assert.False(card.PerShare);
+                Assert.Contains(SmallDealCatalog.All, deal => deal.Symbol == card.AssetName);
                 continue;
             }
 
@@ -87,7 +99,7 @@ public class MarketCatalogTests
 
         Assert.Equal("pier-bid", printed.Draw().Card.Id);
 
-        ScriptedShuffle shuffle = new([4, 1, 2, 3, 0, 5, 6, 7]);
+        ScriptedShuffle shuffle = new([4, 1, 2, 3, 0, 5, 6, 7, 8, 9]);
         Deck<MarketCard> cut = MarketCatalog.CreateDeck(shuffle);
 
         Assert.Equal("extra-mill-shift", cut.Draw().Card.Id);
@@ -111,7 +123,7 @@ public class MarketCatalogTests
             MarketCatalog.Parse("[" + card.Replace("offer", "sale", StringComparison.Ordinal) + "]"));
 
         Assert.Contains("duplicated", duplicate.Message, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("not an offer or an event", kind.Message, StringComparison.Ordinal);
+        Assert.Contains("not an offer, an event, or a split", kind.Message, StringComparison.Ordinal);
         Assert.Throws<JsonException>(() => MarketCatalog.Parse("[]"));
         Assert.Throws<JsonException>(() => MarketCatalog.Parse("[null]"));
         Assert.Throws<ArgumentNullException>(() => MarketCatalog.Parse(null!));

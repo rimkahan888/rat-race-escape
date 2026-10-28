@@ -95,6 +95,45 @@ public class MarketCardTests
     }
 
     [Fact]
+    public void A_split_names_a_symbol_and_does_not_move_cash_or_set_a_price()
+    {
+        MarketCard card = MarketCard.Split(
+            "pier-split",
+            "  North Pier splits  ",
+            "  North Pier Storage splits two for one.  ",
+            " pier ");
+
+        Assert.Equal(MarketKind.Split, card.Kind);
+        Assert.Equal("North Pier splits", card.Title);
+        Assert.Equal("PIER", card.AssetName);
+        Assert.False(card.PerShare);
+        Assert.Equal(Money.Zero, card.Price);
+        Assert.Equal(Money.Zero, card.CashDelta);
+    }
+
+    [Fact]
+    public void A_split_rejects_a_price_a_cash_delta_and_a_missing_symbol_together()
+    {
+        CardValidationException exception = Assert.Throws<CardValidationException>(() =>
+            MarketCard.Create(
+                "pier-split",
+                MarketKind.Split,
+                "North Pier splits",
+                "North Pier Storage splits two for one.",
+                "1BAD",
+                perShare: true,
+                Money.FromDollars(40),
+                Money.FromDollars(10)));
+
+        Assert.Contains("A stock split needs a stock symbol.", exception.Errors);
+        Assert.Contains("A stock split is not priced per share.", exception.Errors);
+        Assert.Contains("A stock split does not name an offer price.", exception.Errors);
+        Assert.Contains("A stock split does not change everyone's cash.", exception.Errors);
+        Assert.Throws<ArgumentNullException>(() =>
+            MarketCard.Split("pier-split", "North Pier splits", "North Pier Storage splits two for one.", null!));
+    }
+
+    [Fact]
     public void Create_rejects_null_wording_and_a_null_asset_on_the_offer_factory()
     {
         Assert.Throws<ArgumentNullException>(() =>
