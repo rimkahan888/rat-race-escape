@@ -11,6 +11,7 @@ public sealed partial class Game
     public Game Roll(IDieRoller roller, int dieCount = 1)
     {
         ArgumentNullException.ThrowIfNull(roller);
+        RequireAction();
 
         if (TurnPhase != TurnPhase.AwaitingRoll)
         {
@@ -55,6 +56,8 @@ public sealed partial class Game
     /// </summary>
     public Game Resolve(SpaceChoice choice = SpaceChoice.None)
     {
+        RequireAction();
+
         if (TurnPhase != TurnPhase.AwaitingResolve || LastRoll is null)
         {
             throw new TurnException(
@@ -193,16 +196,37 @@ public sealed partial class Game
     /// <summary>
     /// Closes the turn and gives the dice to the next player who can take it.
     /// A drawn card goes onto its discard pile. A player with skipped turns
-    /// misses this pass and loses one skipped turn.
+    /// misses this pass and loses one skipped turn. A bankrupt player is
+    /// skipped for good. When nobody is left, the table is over.
     /// </summary>
     public Game EndTurn()
     {
+        if (Phase == GamePhase.Over)
+        {
+            throw new TurnException("The game is already over.");
+        }
+
         if (TurnPhase != TurnPhase.AwaitingEnd)
         {
             throw new TurnException(
                 TurnPhase == TurnPhase.AwaitingRoll
                     ? "Roll the dice before ending the turn."
                     : "Resolve the space before ending the turn.");
+        }
+
+        CardPiles piles = Discard(Piles, Drawn);
+        if (!AnySolvent(Players))
+        {
+            return new Game(
+                Id,
+                Players,
+                CurrentTurnIndex,
+                GamePhase.Over,
+                TurnPhase.AwaitingRoll,
+                lastRoll: null,
+                pendingDeck: null,
+                piles,
+                drawn: null);
         }
 
         Player[] players = Players.ToArray();
@@ -213,6 +237,17 @@ public sealed partial class Game
         while (true)
         {
             index = (index + 1) % players.Length;
+            if (players[index].IsBankrupt)
+            {
+                skipped++;
+                if (skipped > guardLimit)
+                {
+                    throw new InvalidOperationException("Skip turns did not resolve.");
+                }
+
+                continue;
+            }
+
             int skips = players[index].SkipTurnsRemaining;
             if (skips == 0)
             {
@@ -235,8 +270,21 @@ public sealed partial class Game
             TurnPhase.AwaitingRoll,
             lastRoll: null,
             pendingDeck: null,
-            Discard(Piles, Drawn),
+            piles,
             drawn: null);
+    }
+
+    private static bool AnySolvent(IReadOnlyList<Player> players)
+    {
+        foreach (Player player in players)
+        {
+            if (!player.IsBankrupt)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static CardPiles Discard(CardPiles piles, DrawnCard? drawn)

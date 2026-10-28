@@ -36,7 +36,7 @@ public class MarketTurnTests
     }
 
     [Fact]
-    public void A_charge_one_player_cannot_cover_leaves_the_table_and_the_deck()
+    public void A_charge_one_player_cannot_cover_bankrupts_that_player_only()
     {
         MarketCard levy = MarketCard.Event(
             "wharf-levy",
@@ -47,15 +47,17 @@ public class MarketTurnTests
             .WithMarket(Deck<MarketCard>.Create([levy], new IdentityShuffle()));
         Game landed = Game.Create(GameId, Seats(), piles).Roll(new ScriptedDieRoller([5]));
 
-        TurnException exception = Assert.Throws<TurnException>(() => landed.Resolve());
+        Game settled = landed.Resolve();
 
-        Assert.Contains("Cash cannot cover the market event.", exception.Errors);
-        Assert.Equal(TurnPhase.AwaitingResolve, landed.TurnPhase);
+        Assert.Equal("wharf-levy", settled.Drawn!.Id);
+        Assert.Equal(TurnPhase.AwaitingEnd, settled.TurnPhase);
+        Assert.True(settled.Players[0].IsBankrupt);
+        Assert.Equal(Money.Zero, settled.Players[0].Cash);
+        Assert.Empty(settled.Players[0].BalanceSheet.OtherLoans);
+        Assert.False(settled.Players[1].IsBankrupt);
+        Assert.Equal(Money.FromDollars(400), settled.Players[1].Cash);
         Assert.Equal(Money.FromDollars(900), landed.Players[0].Cash);
-        Assert.Equal(Money.FromDollars(1_400), landed.Players[1].Cash);
-        Assert.Null(landed.Drawn);
-        Assert.Equal(1, landed.Piles.Market.DrawCount);
-        Assert.Equal(0, landed.Piles.Market.DiscardCount);
+        Assert.Equal(0, settled.Piles.Market.DiscardCount);
     }
 
     [Fact]

@@ -23,18 +23,35 @@ public class MarketEventTests
     }
 
     [Fact]
-    public void One_short_player_stops_the_charge_for_the_whole_table()
+    public void A_short_player_goes_bankrupt_and_the_others_still_pay()
     {
         Player baker = Baker().WithCash(Money.FromDollars(100));
         Player archivist = Archivist();
         Money archivistCash = archivist.Cash;
 
-        TurnException exception = Assert.Throws<TurnException>(() =>
-            MarketEvent.Apply([baker, archivist], Money.FromDollars(-150)));
+        Player[] billed = MarketEvent.Apply([baker, archivist], Money.FromDollars(-150));
 
-        Assert.Contains("Cash cannot cover the market event.", exception.Errors);
+        Assert.True(billed[0].IsBankrupt);
+        Assert.Equal(Money.Zero, billed[0].Cash);
+        Assert.Equal(archivistCash - Money.FromDollars(150), billed[1].Cash);
+        Assert.False(billed[1].IsBankrupt);
         Assert.Equal(Money.FromDollars(100), baker.Cash);
         Assert.Equal(archivistCash, archivist.Cash);
+    }
+
+    [Fact]
+    public void A_bankrupt_player_is_left_out_of_a_payment_and_a_charge()
+    {
+        Player broke = Bankruptcy.Apply(Baker());
+        Player archivist = Archivist();
+
+        Player[] paid = MarketEvent.Apply([broke, archivist], Money.FromDollars(200));
+        Player[] billed = MarketEvent.Apply([broke, archivist], Money.FromDollars(-150));
+
+        Assert.Same(broke, paid[0]);
+        Assert.Same(broke, billed[0]);
+        Assert.Equal(archivist.Cash + Money.FromDollars(200), paid[1].Cash);
+        Assert.Equal(archivist.Cash - Money.FromDollars(150), billed[1].Cash);
     }
 
     [Fact]

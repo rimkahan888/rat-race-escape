@@ -9,6 +9,7 @@ public sealed partial class Game
     /// </summary>
     public Game SellShares(int shares)
     {
+        RequireAction();
         MarketCard offer = RequireShareBid();
         Player seller = StockSale.Sell(CurrentPlayer, offer.AssetName!, shares, offer.Price);
         return Take(seller);
@@ -22,6 +23,7 @@ public sealed partial class Game
     /// </summary>
     public Game SellAsset()
     {
+        RequireAction();
         MarketCard offer = RequireAssetOffer();
         string name = offer.AssetName!;
         bool property = OwnsRealEstate(CurrentPlayer, name);

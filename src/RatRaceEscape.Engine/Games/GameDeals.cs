@@ -9,6 +9,8 @@ public sealed partial class Game
     /// </summary>
     public Game BuyShares(int shares)
     {
+        RequireAction();
+
         if (TurnPhase != TurnPhase.AwaitingEnd)
         {
             throw new TurnException(
@@ -46,6 +48,7 @@ public sealed partial class Game
     /// </summary>
     public Game BuyAsset()
     {
+        RequireAction();
         RequireOffer();
 
         if (Drawn!.SmallDeal is SmallDeal small)
@@ -85,6 +88,7 @@ public sealed partial class Game
     /// </summary>
     public Game Buy(int? shares)
     {
+        RequireAction();
         RequireOffer();
 
         if (Drawn!.SmallDeal is SmallDeal deal && deal.Kind == SmallDealKind.Stock)
@@ -111,6 +115,8 @@ public sealed partial class Game
     /// </summary>
     public Game Pass()
     {
+        RequireAction();
+
         if (TurnPhase != TurnPhase.AwaitingEnd)
         {
             throw new TurnException(

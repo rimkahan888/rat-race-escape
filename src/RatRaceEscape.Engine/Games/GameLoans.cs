@@ -10,6 +10,7 @@ public sealed partial class Game
     /// </summary>
     public Game Borrow(int increments)
     {
+        RequireAction();
         Player borrower = BankLoan.Borrow(CurrentPlayer, increments);
         return WithPlayer(borrower, TurnPhase, LastRoll, PendingDeck, Drawn, Piles);
     }
@@ -20,6 +21,7 @@ public sealed partial class Game
     /// </summary>
     public Game Repay(int increments)
     {
+        RequireAction();
         Player payer = BankLoan.Repay(CurrentPlayer, increments);
         return WithPlayer(payer, TurnPhase, LastRoll, PendingDeck, Drawn, Piles);
     }

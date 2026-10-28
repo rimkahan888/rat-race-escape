@@ -15,7 +15,8 @@ public sealed class Player
         int childCount,
         int boardIndex,
         int extraDieTurnsRemaining,
-        int skipTurnsRemaining)
+        int skipTurnsRemaining,
+        bool isBankrupt)
     {
         Name = name;
         Profession = profession;
@@ -25,6 +26,7 @@ public sealed class Player
         BoardIndex = boardIndex;
         ExtraDieTurnsRemaining = extraDieTurnsRemaining;
         SkipTurnsRemaining = skipTurnsRemaining;
+        IsBankrupt = isBankrupt;
     }
 
     public string Name { get; }
@@ -68,6 +70,12 @@ public sealed class Player
     /// </summary>
     public int SkipTurnsRemaining { get; }
 
+    /// <summary>
+    /// True after a shortfall survives a forced sale. A bankrupt player is
+    /// out of the game. A new player is not bankrupt.
+    /// </summary>
+    public bool IsBankrupt { get; }
+
     public static Player Create(string name, Profession profession, TokenColour tokenColour)
     {
         ArgumentNullException.ThrowIfNull(name);
@@ -104,7 +112,8 @@ public sealed class Player
             childCount: 0,
             boardIndex: 0,
             extraDieTurnsRemaining: 0,
-            skipTurnsRemaining: 0);
+            skipTurnsRemaining: 0,
+            isBankrupt: false);
     }
 
     public Player WithBalanceSheet(BalanceSheet balanceSheet)
@@ -118,7 +127,8 @@ public sealed class Player
             ChildCount,
             BoardIndex,
             ExtraDieTurnsRemaining,
-            SkipTurnsRemaining);
+            SkipTurnsRemaining,
+            IsBankrupt);
     }
 
     public Player WithChildCount(int childCount)
@@ -136,7 +146,8 @@ public sealed class Player
             childCount,
             BoardIndex,
             ExtraDieTurnsRemaining,
-            SkipTurnsRemaining);
+            SkipTurnsRemaining,
+            IsBankrupt);
     }
 
     public Player WithBoardIndex(int boardIndex)
@@ -156,7 +167,8 @@ public sealed class Player
             ChildCount,
             boardIndex,
             ExtraDieTurnsRemaining,
-            SkipTurnsRemaining);
+            SkipTurnsRemaining,
+            IsBankrupt);
     }
 
     public Player WithExtraDieTurns(int extraDieTurnsRemaining)
@@ -176,7 +188,8 @@ public sealed class Player
             ChildCount,
             BoardIndex,
             extraDieTurnsRemaining,
-            SkipTurnsRemaining);
+            SkipTurnsRemaining,
+            IsBankrupt);
     }
 
     public Player WithSkipTurnsRemaining(int skipTurnsRemaining)
@@ -194,7 +207,22 @@ public sealed class Player
             ChildCount,
             BoardIndex,
             ExtraDieTurnsRemaining,
-            skipTurnsRemaining);
+            skipTurnsRemaining,
+            IsBankrupt);
+    }
+
+    public Player WithBankrupt(bool isBankrupt)
+    {
+        return new Player(
+            Name,
+            Profession,
+            TokenColour,
+            BalanceSheet,
+            ChildCount,
+            BoardIndex,
+            ExtraDieTurnsRemaining,
+            SkipTurnsRemaining,
+            isBankrupt);
     }
 
     public Player WithCash(Money cash)
