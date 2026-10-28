@@ -16,7 +16,8 @@ public sealed class Player
         int boardIndex,
         int extraDieTurnsRemaining,
         int skipTurnsRemaining,
-        bool isBankrupt)
+        bool isBankrupt,
+        BoardTrack track)
     {
         Name = name;
         Profession = profession;
@@ -27,6 +28,7 @@ public sealed class Player
         ExtraDieTurnsRemaining = extraDieTurnsRemaining;
         SkipTurnsRemaining = skipTurnsRemaining;
         IsBankrupt = isBankrupt;
+        Track = track;
     }
 
     public string Name { get; }
@@ -54,9 +56,15 @@ public sealed class Player
     public const int MaximumChildren = 3;
 
     /// <summary>
-    /// Square the token is on. A new player stands on the opening space.
+    /// Square the token is on. A new player stands on the opening space of
+    /// the rat race. After leaving, the count starts again on the fast track.
     /// </summary>
     public int BoardIndex { get; }
+
+    /// <summary>
+    /// The board this token is on. A new player is in the rat race.
+    /// </summary>
+    public BoardTrack Track { get; }
 
     /// <summary>
     /// Turns left on which this player may roll one or two dice. Charity adds
@@ -113,7 +121,8 @@ public sealed class Player
             boardIndex: 0,
             extraDieTurnsRemaining: 0,
             skipTurnsRemaining: 0,
-            isBankrupt: false);
+            isBankrupt: false,
+            track: BoardTrack.RatRace);
     }
 
     public Player WithBalanceSheet(BalanceSheet balanceSheet)
@@ -128,7 +137,8 @@ public sealed class Player
             BoardIndex,
             ExtraDieTurnsRemaining,
             SkipTurnsRemaining,
-            IsBankrupt);
+            IsBankrupt,
+            Track);
     }
 
     public Player WithChildCount(int childCount)
@@ -147,16 +157,18 @@ public sealed class Player
             BoardIndex,
             ExtraDieTurnsRemaining,
             SkipTurnsRemaining,
-            IsBankrupt);
+            IsBankrupt,
+            Track);
     }
 
     public Player WithBoardIndex(int boardIndex)
     {
-        if (boardIndex < 0 || boardIndex >= RatRaceBoard.SpaceCount)
+        int spaceCount = Track == BoardTrack.FastTrack ? FastTrackBoard.SpaceCount : RatRaceBoard.SpaceCount;
+        if (boardIndex < 0 || boardIndex >= spaceCount)
         {
             throw new ArgumentOutOfRangeException(
                 nameof(boardIndex),
-                $"Board index must be from 0 to {RatRaceBoard.SpaceCount - 1}.");
+                $"Board index must be from 0 to {spaceCount - 1}.");
         }
 
         return new Player(
@@ -168,7 +180,8 @@ public sealed class Player
             boardIndex,
             ExtraDieTurnsRemaining,
             SkipTurnsRemaining,
-            IsBankrupt);
+            IsBankrupt,
+            Track);
     }
 
     public Player WithExtraDieTurns(int extraDieTurnsRemaining)
@@ -189,7 +202,8 @@ public sealed class Player
             BoardIndex,
             extraDieTurnsRemaining,
             SkipTurnsRemaining,
-            IsBankrupt);
+            IsBankrupt,
+            Track);
     }
 
     public Player WithSkipTurnsRemaining(int skipTurnsRemaining)
@@ -208,7 +222,8 @@ public sealed class Player
             BoardIndex,
             ExtraDieTurnsRemaining,
             skipTurnsRemaining,
-            IsBankrupt);
+            IsBankrupt,
+            Track);
     }
 
     public Player WithBankrupt(bool isBankrupt)
@@ -222,7 +237,36 @@ public sealed class Player
             BoardIndex,
             ExtraDieTurnsRemaining,
             SkipTurnsRemaining,
-            isBankrupt);
+            isBankrupt,
+            Track);
+    }
+
+    public Player WithTrack(BoardTrack track, int boardIndex)
+    {
+        if (!Enum.IsDefined(track))
+        {
+            throw new ArgumentOutOfRangeException(nameof(track), "Track is not a board.");
+        }
+
+        int spaceCount = track == BoardTrack.FastTrack ? FastTrackBoard.SpaceCount : RatRaceBoard.SpaceCount;
+        if (boardIndex < 0 || boardIndex >= spaceCount)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(boardIndex),
+                $"Board index must be from 0 to {spaceCount - 1}.");
+        }
+
+        return new Player(
+            Name,
+            Profession,
+            TokenColour,
+            BalanceSheet,
+            ChildCount,
+            boardIndex,
+            ExtraDieTurnsRemaining,
+            SkipTurnsRemaining,
+            IsBankrupt,
+            track);
     }
 
     public Player WithCash(Money cash)
