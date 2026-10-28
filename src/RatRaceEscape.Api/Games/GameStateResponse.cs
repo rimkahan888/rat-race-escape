@@ -10,7 +10,8 @@ public sealed record GameStateResponse(
     TurnRollResponse? LastRoll,
     string? PendingDeck,
     DrawnCardResponse? Drawn,
-    IReadOnlyList<PlayerStateResponse> Players)
+    IReadOnlyList<PlayerStateResponse> Players,
+    int? WinnerIndex)
 {
     public static GameStateResponse From(Game game)
     {
@@ -22,7 +23,21 @@ public sealed record GameStateResponse(
             Player player = game.Players[index];
             IncomeStatement income = IncomeStatement.For(player);
             CashFlow cashFlow = CashFlow.From(income);
-            BoardSpace space = RatRaceBoard.At(player.BoardIndex);
+            string spaceKind;
+            string spaceTitle;
+            if (player.Track == BoardTrack.FastTrack)
+            {
+                FastTrackSpace fastTrack = FastTrackBoard.At(player.BoardIndex);
+                spaceKind = fastTrack.Kind.ToString();
+                spaceTitle = fastTrack.Title;
+            }
+            else
+            {
+                BoardSpace space = RatRaceBoard.At(player.BoardIndex);
+                spaceKind = space.Kind.ToString();
+                spaceTitle = space.Title;
+            }
+
             players[index] = new PlayerStateResponse(
                 player.Name,
                 player.Profession.Id,
@@ -39,13 +54,16 @@ public sealed record GameStateResponse(
                 cashFlow.Monthly.Cents,
                 cashFlow.PassiveIncomeExceedsExpenses,
                 player.BoardIndex,
-                space.Kind.ToString(),
-                space.Title,
+                spaceKind,
+                spaceTitle,
                 player.SkipTurnsRemaining,
                 player.ExtraDieTurnsRemaining,
                 StocksOf(player),
                 RealEstateOf(player),
-                BusinessesOf(player));
+                BusinessesOf(player),
+                player.Track.ToString(),
+                player.IsBankrupt,
+                LoansOf(player));
         }
 
         TurnRoll? roll = game.LastRoll;
@@ -61,7 +79,20 @@ public sealed record GameStateResponse(
             lastRoll,
             game.PendingDeck?.ToString(),
             DrawnCardResponse.From(game.Drawn),
-            players);
+            players,
+            game.WinnerIndex);
+    }
+
+    private static LoanResponse[] LoansOf(Player player)
+    {
+        LoanResponse[] loans = new LoanResponse[player.BalanceSheet.OtherLoans.Count];
+        for (int index = 0; index < loans.Length; index++)
+        {
+            LoanLiability loan = player.BalanceSheet.OtherLoans[index];
+            loans[index] = new LoanResponse(loan.Name, loan.Balance.Cents, loan.MonthlyPayment.Cents);
+        }
+
+        return loans;
     }
 
     private static StockHoldingResponse[] StocksOf(Player player)
@@ -225,7 +256,12 @@ public sealed record PlayerStateResponse(
     int ExtraDieTurnsRemaining,
     IReadOnlyList<StockHoldingResponse> Stocks,
     IReadOnlyList<RealEstateHoldingResponse> RealEstate,
-    IReadOnlyList<BusinessHoldingResponse> Businesses);
+    IReadOnlyList<BusinessHoldingResponse> Businesses,
+    string Track,
+    bool IsBankrupt,
+    IReadOnlyList<LoanResponse> Loans);
+
+public sealed record LoanResponse(string Name, long BalanceCents, long MonthlyPaymentCents);
 
 public sealed record StockHoldingResponse(string Symbol, int Shares, long CostPerShareCents, long DividendPerShareCents);
 

@@ -34,7 +34,61 @@ public static class GameEndpoints
             .WithName("PassCard")
             .WithTags("Games");
 
+        endpoints.MapPost("/games/{id:guid}/sell-shares", SellShares)
+            .WithName("SellShares")
+            .WithTags("Games");
+
+        endpoints.MapPost("/games/{id:guid}/sell-asset", SellAsset)
+            .WithName("SellAsset")
+            .WithTags("Games");
+
+        endpoints.MapPost("/games/{id:guid}/borrow", Borrow)
+            .WithName("Borrow")
+            .WithTags("Games");
+
+        endpoints.MapPost("/games/{id:guid}/repay", Repay)
+            .WithName("Repay")
+            .WithTags("Games");
+
+        endpoints.MapPost("/games/{id:guid}/settle", Settle)
+            .WithName("Settle")
+            .WithTags("Games");
+
+        endpoints.MapPost("/games/{id:guid}/leave", Leave)
+            .WithName("LeaveRatRace")
+            .WithTags("Games");
+
         return endpoints;
+    }
+
+    private static IResult SellShares(Guid id, BuyRequest? request, IGameRepository games)
+    {
+        return Play(id, games, game => game.SellShares(request?.Shares ?? 0));
+    }
+
+    private static IResult SellAsset(Guid id, IGameRepository games)
+    {
+        return Play(id, games, game => game.SellAsset());
+    }
+
+    private static IResult Borrow(Guid id, LoanRequest? request, IGameRepository games)
+    {
+        return Play(id, games, game => game.Borrow(request?.Increments ?? 0));
+    }
+
+    private static IResult Repay(Guid id, LoanRequest? request, IGameRepository games)
+    {
+        return Play(id, games, game => game.Repay(request?.Increments ?? 0));
+    }
+
+    private static IResult Settle(Guid id, IGameRepository games)
+    {
+        return Play(id, games, game => game.Settle());
+    }
+
+    private static IResult Leave(Guid id, IGameRepository games)
+    {
+        return Play(id, games, game => game.LeaveRatRace());
     }
 
     private static IResult Buy(Guid id, BuyRequest? request, IGameRepository games)
@@ -146,3 +200,5 @@ public sealed record RollRequest(int? DieCount);
 public sealed record ResolveRequest(SpaceChoice? Choice);
 
 public sealed record BuyRequest(int? Shares);
+
+public sealed record LoanRequest(int? Increments);

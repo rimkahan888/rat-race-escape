@@ -464,6 +464,12 @@ public sealed class TurnApiTests : IClassFixture<RatRaceEscapeApiFactory>
     [InlineData("end-turn")]
     [InlineData("buy")]
     [InlineData("pass")]
+    [InlineData("sell-shares")]
+    [InlineData("sell-asset")]
+    [InlineData("borrow")]
+    [InlineData("repay")]
+    [InlineData("settle")]
+    [InlineData("leave")]
     public async Task Turn_actions_return_404_when_the_game_is_unknown(string action)
     {
         await AssertNotFound($"/games/{Guid.NewGuid()}/{action}");
