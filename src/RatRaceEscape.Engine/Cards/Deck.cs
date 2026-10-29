@@ -11,9 +11,11 @@ namespace RatRaceEscape.Engine;
 public sealed class Deck<T>
     where T : notnull
 {
+    private readonly Lock _gate = new();
     private readonly T[] _draw;
     private readonly T[] _discard;
     private readonly IShuffle _shuffle;
+    private DeckDraw<T>? _drawn;
 
     private Deck(T[] draw, T[] discard, IShuffle shuffle)
     {
@@ -53,6 +55,18 @@ public sealed class Deck<T>
     }
 
     public DeckDraw<T> Draw()
+    {
+        lock (_gate)
+        {
+            // A discarded draw, such as a bill the player cannot pay, must
+            // deal the same card again. Reshuffling the discards advances the
+            // seeded order, so that work is kept with this deck.
+            _drawn ??= Take();
+            return _drawn;
+        }
+    }
+
+    private DeckDraw<T> Take()
     {
         T[] draw = _draw;
         T[] discard = _discard;

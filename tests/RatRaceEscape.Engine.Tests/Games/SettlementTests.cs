@@ -80,7 +80,7 @@ public class SettlementTests
     }
 
     [Fact]
-    public void Hours_cut_that_a_sale_cannot_cover_bankrupts_without_skipping_turns()
+    public void Hours_cut_borrows_the_shortfall_without_adding_that_loan_to_the_bill()
     {
         Game landed = Game.Create(GameId, [new PlayerSetup("Ava", "night-baker", TokenColour.Amber)])
             .Roll(new ScriptedDieRoller([6]))
@@ -90,7 +90,45 @@ public class SettlementTests
             .Resolve()
             .EndTurn()
             .Roll(new ScriptedDieRoller([1]));
+        Money due = IncomeStatement.For(landed.CurrentPlayer).TotalExpenses;
 
+        TurnException unpaid = Assert.Throws<TurnException>(() => landed.Resolve());
+        Game settled = landed.Settle();
+
+        Assert.Contains("Cash cannot cover the downsized expenses.", unpaid.Errors);
+        Assert.Equal(Money.FromDollars(2_170), due);
+        Assert.False(settled.CurrentPlayer.IsBankrupt);
+        Assert.Equal(2, settled.CurrentPlayer.SkipTurnsRemaining);
+        Assert.Equal(Money.FromDollars(990), settled.CurrentPlayer.Cash);
+        Assert.Equal(Money.FromDollars(1_000), Assert.Single(settled.CurrentPlayer.BalanceSheet.OtherLoans).Balance);
+        Assert.Equal(due + Money.FromDollars(100), IncomeStatement.For(settled.CurrentPlayer).TotalExpenses);
+        Assert.Equal(Money.FromDollars(530), CashFlow.For(settled.CurrentPlayer).Monthly);
+        Assert.Equal(TurnPhase.AwaitingEnd, settled.TurnPhase);
+    }
+
+    [Fact]
+    public void Hours_cut_bankrupts_without_skipping_when_a_loan_cannot_cover_the_bill()
+    {
+        Doodad repair = Doodad.Create(
+            "kiln-rebuild",
+            "Kiln Rebuild",
+            "The kiln has to be rebuilt before the next firing.",
+            Money.FromDollars(5_000));
+        CardPiles piles = CardPiles.Create(new IdentityShuffle())
+            .WithDoodads(Deck<Doodad>.Create([repair], new IdentityShuffle()));
+        Game landed = Game.Create(GameId, [new PlayerSetup("Ava", "night-baker", TokenColour.Amber)], piles)
+            .Borrow(6)
+            .Roll(new ScriptedDieRoller([1]))
+            .Resolve()
+            .EndTurn()
+            .Roll(new ScriptedDieRoller([6]))
+            .Resolve(SpaceChoice.SmallDeal)
+            .EndTurn()
+            .Roll(new ScriptedDieRoller([6]));
+
+        Assert.Equal(SpaceKind.Downsized, RatRaceBoard.At(landed.CurrentPlayer.BoardIndex).Kind);
+        Assert.Equal(0, CashFlow.BankIncrementsAllowed(landed.CurrentPlayer));
+        Assert.True(landed.CurrentPlayer.Cash < IncomeStatement.For(landed.CurrentPlayer).TotalExpenses);
         TurnException unpaid = Assert.Throws<TurnException>(() => landed.Resolve());
         Game settled = landed.Settle();
 
@@ -98,6 +136,7 @@ public class SettlementTests
         Assert.True(settled.CurrentPlayer.IsBankrupt);
         Assert.Equal(0, settled.CurrentPlayer.SkipTurnsRemaining);
         Assert.Equal(Money.Zero, settled.CurrentPlayer.Cash);
+        Assert.Empty(settled.CurrentPlayer.BalanceSheet.OtherLoans);
         Assert.Equal(TurnPhase.AwaitingEnd, settled.TurnPhase);
     }
 

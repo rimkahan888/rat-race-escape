@@ -95,7 +95,7 @@ public sealed class DayFiveApiTests : IClassFixture<RatRaceEscapeApiFactory>
     }
 
     [Fact]
-    public async Task Settle_bankrupts_a_player_who_cannot_pay_hours_cut()
+    public async Task Settle_covers_hours_cut_with_a_loan_that_does_not_raise_the_bill()
     {
         Guid id = Id(await StartAsync(OnePlayer()));
         _factory.Dice.Enqueue(6, 6, 1);
@@ -114,17 +114,20 @@ public sealed class DayFiveApiTests : IClassFixture<RatRaceEscapeApiFactory>
 
         JsonElement settled = await PostEmptyAsync($"/games/{id}/settle");
         JsonElement player = settled.GetProperty("players")[0];
-        Assert.True(player.GetProperty("isBankrupt").GetBoolean());
-        Assert.Equal(0, player.GetProperty("cashCents").GetInt64());
-        Assert.Equal(0, player.GetProperty("skipTurnsRemaining").GetInt32());
+        Assert.False(player.GetProperty("isBankrupt").GetBoolean());
+        Assert.Equal(99_000, player.GetProperty("cashCents").GetInt64());
+        Assert.Equal(2, player.GetProperty("skipTurnsRemaining").GetInt32());
+        Assert.Equal(100_000, player.GetProperty("loans")[0].GetProperty("balanceCents").GetInt64());
+        Assert.Equal(10_000, player.GetProperty("loans")[0].GetProperty("monthlyPaymentCents").GetInt64());
+        Assert.Equal(227_000, player.GetProperty("totalExpensesCents").GetInt64());
+        Assert.Equal(53_000, player.GetProperty("monthlyCashFlowCents").GetInt64());
         Assert.Equal("RatRace", settled.GetProperty("phase").GetString());
         Assert.Equal("AwaitingEnd", settled.GetProperty("turnPhase").GetString());
 
-        JsonElement over = await PostEmptyAsync($"/games/{id}/end-turn");
-        Assert.Equal("Over", over.GetProperty("phase").GetString());
-        Assert.Equal(JsonValueKind.Null, over.GetProperty("winnerIndex").ValueKind);
-        await AssertConflict($"/games/{id}/roll", null, "The game is already over.");
-        await AssertConflict($"/games/{id}/borrow", """{ "increments": 1 }""", "The game is already over.");
+        JsonElement ready = await PostEmptyAsync($"/games/{id}/end-turn");
+        Assert.Equal("RatRace", ready.GetProperty("phase").GetString());
+        Assert.Equal("AwaitingRoll", ready.GetProperty("turnPhase").GetString());
+        Assert.Equal(0, ready.GetProperty("players")[0].GetProperty("skipTurnsRemaining").GetInt32());
     }
 
     [Fact]

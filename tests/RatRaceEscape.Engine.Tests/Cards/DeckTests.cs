@@ -91,6 +91,22 @@ public class DeckTests
     }
 
     [Fact]
+    public void Drawing_a_reshuffled_pile_twice_deals_the_same_card()
+    {
+        ScriptedShuffle shuffle = new([0, 1], [1, 0]);
+        Deck<string> spent = Deck<string>.Create(["a", "b"], shuffle).Draw().Deck.Draw().Deck;
+        Deck<string> discarded = spent.Discard("a").Discard("b");
+
+        DeckDraw<string> first = discarded.Draw();
+        DeckDraw<string> again = discarded.Draw();
+
+        Assert.Equal("b", first.Card);
+        Assert.Equal(first.Card, again.Card);
+        Assert.Equal(first.Deck.DrawCount, again.Deck.DrawCount);
+        Assert.Equal(0, shuffle.Remaining);
+    }
+
+    [Fact]
     public void Draw_fails_when_both_piles_are_empty_and_leaves_the_deck()
     {
         Deck<string> spent = Deck<string>.Create(["only"], new IdentityShuffle()).Draw().Deck;
