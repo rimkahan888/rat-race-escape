@@ -73,6 +73,21 @@ public sealed class IncomeStatement
     {
         ArgumentNullException.ThrowIfNull(player);
 
+        if (player.IsBankrupt)
+        {
+            return Create(
+                Money.Zero,
+                Money.Zero,
+                Money.Zero,
+                Money.Zero,
+                Money.Zero,
+                Money.Zero,
+                Money.Zero,
+                Money.Zero,
+                childCount: 0,
+                Money.Zero);
+        }
+
         Profession profession = player.Profession;
         return Create(
             profession.MonthlySalary,

@@ -18,7 +18,9 @@ public class SettlementTests
         Assert.Equal("gold-crown", settled.Drawn!.Id);
         Assert.True(settled.CurrentPlayer.IsBankrupt);
         Assert.Equal(Money.Zero, settled.CurrentPlayer.Cash);
-        Assert.Equal(landed.CurrentPlayer.BalanceSheet.Mortgage, settled.CurrentPlayer.BalanceSheet.Mortgage);
+        Assert.Equal(Money.Zero, settled.CurrentPlayer.BalanceSheet.Mortgage);
+        Assert.Equal(Money.Zero, settled.CurrentPlayer.BalanceSheet.TotalLiabilities);
+        Assert.Equal(Money.Zero, CashFlow.For(settled.CurrentPlayer).Monthly);
         Assert.Equal(TurnPhase.AwaitingEnd, settled.TurnPhase);
         Assert.Equal(0, settled.CurrentPlayer.SkipTurnsRemaining);
         Assert.Equal(GamePhase.Over, over.Phase);

@@ -90,9 +90,15 @@ public class ShortfallTests
         Assert.Empty(broke.BalanceSheet.RealEstate);
         Assert.Empty(broke.BalanceSheet.Businesses);
         Assert.Empty(broke.BalanceSheet.OtherLoans);
-        Assert.Equal(baker.BalanceSheet.Mortgage, broke.BalanceSheet.Mortgage);
-        Assert.Equal(baker.BalanceSheet.CarLoan, broke.BalanceSheet.CarLoan);
-        Assert.Equal(baker.BalanceSheet.CreditCard, broke.BalanceSheet.CreditCard);
+        Assert.Equal(Money.Zero, broke.BalanceSheet.Mortgage);
+        Assert.Equal(Money.Zero, broke.BalanceSheet.CarLoan);
+        Assert.Equal(Money.Zero, broke.BalanceSheet.CreditCard);
+        Assert.Equal(Money.Zero, broke.BalanceSheet.TotalLiabilities);
+        Assert.Equal(Money.Zero, broke.BalanceSheet.TotalAssets);
+        Assert.Equal(Money.Zero, IncomeStatement.For(broke).Salary);
+        Assert.Equal(Money.Zero, IncomeStatement.For(broke).TotalExpenses);
+        Assert.Equal(Money.Zero, CashFlow.For(broke).Monthly);
+        Assert.Equal(baker.Profession.Title, broke.Profession.Title);
         Assert.Equal(children, broke.ChildCount);
         Assert.Equal(4, broke.BoardIndex);
         Assert.False(baker.IsBankrupt);
