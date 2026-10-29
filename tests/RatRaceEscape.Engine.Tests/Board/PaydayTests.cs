@@ -99,31 +99,21 @@ public class PaydayTests
     }
 
     [Fact]
-    public void Negative_cash_flow_is_paid_to_the_bank_when_cash_covers_it()
-    {
-        Player parent = BakerPlayer().WithChildCount(3);
-        Money monthly = CashFlow.For(parent).Monthly;
-        Assert.Equal(Money.FromCents(-21_000), monthly);
-
-        Player paid = Payday.Collect(parent, 1);
-        Player cleared = Payday.Collect(parent.WithCash(monthly.Negate()), 1);
-
-        Assert.Equal(parent.Cash + monthly, paid.Cash);
-        Assert.Equal(Money.Zero, cleared.Cash);
-        Assert.Equal(3, paid.ChildCount);
-    }
-
-    [Fact]
-    public void Negative_cash_flow_fails_when_cash_is_short_and_leaves_the_player()
+    public void A_month_below_zero_pays_nothing_and_leaves_the_cash()
     {
         Player parent = BakerPlayer().WithChildCount(3);
         Player broke = parent.WithCash(Money.FromCents(20_999));
 
-        TurnException exception = Assert.Throws<TurnException>(() => Payday.Collect(broke, 1));
+        Assert.Equal(Money.Zero, CashFlow.For(parent).Monthly);
+        Assert.Equal(Money.FromCents(-21_000), parent.Profession.MonthlyCashFlow(3));
 
-        Assert.Contains("Cash cannot cover the payday shortfall.", exception.Errors);
-        Assert.Equal(Money.FromCents(20_999), broke.Cash);
-        Assert.Equal(3, broke.ChildCount);
+        Player paid = Payday.Collect(parent, 1);
+        Player still = Payday.Collect(broke, 2);
+
+        Assert.Equal(parent.Cash, paid.Cash);
+        Assert.Equal(broke.Cash, still.Cash);
+        Assert.Equal(3, paid.ChildCount);
+        Assert.Equal(3, still.ChildCount);
     }
 
     [Fact]

@@ -12,6 +12,7 @@ public sealed partial class Game
         RequireAction();
         MarketCard offer = RequireShareBid();
         Player seller = StockSale.Sell(CurrentPlayer, offer.AssetName!, shares, offer.Price);
+        CashFlow.RejectIfNegative(seller, "That sale would leave monthly cash flow below zero.");
         return Take(seller);
     }
 
@@ -35,6 +36,7 @@ public sealed partial class Game
         Player seller = property
             ? AssetSale.SellRealEstate(CurrentPlayer, name, offer.Price)
             : AssetSale.SellBusiness(CurrentPlayer, name, offer.Price);
+        CashFlow.RejectIfNegative(seller, "That sale would leave monthly cash flow below zero.");
         return Take(seller);
     }
 

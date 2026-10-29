@@ -59,7 +59,23 @@ public class ShortfallTests
     }
 
     [Fact]
-    public void A_bill_that_survives_the_sale_wipes_the_sheet_and_the_bank_loan()
+    public void A_loan_covers_a_bill_when_monthly_cash_flow_stays_at_zero_or_more()
+    {
+        Player baker = Baker().WithCash(Money.FromDollars(100));
+
+        Player paid = Shortfall.Cover(baker, Money.FromDollars(150));
+
+        Assert.False(paid.IsBankrupt);
+        Assert.Equal(Money.FromDollars(950), paid.Cash);
+        Assert.Equal(Money.FromDollars(1_000), Assert.Single(paid.BalanceSheet.OtherLoans).Balance);
+        Assert.Equal(Money.FromDollars(100), Assert.Single(paid.BalanceSheet.OtherLoans).MonthlyPayment);
+        Assert.False(CashFlow.For(paid).Monthly.IsNegative);
+        Assert.Equal(Money.FromDollars(100), baker.Cash);
+        Assert.Empty(baker.BalanceSheet.OtherLoans);
+    }
+
+    [Fact]
+    public void A_bill_that_survives_the_sale_and_an_allowed_loan_wipes_the_sheet()
     {
         Player baker = BankLoan.Borrow(Baker(), 1);
         baker = StockPurchase.Buy(baker, "PIER", 4, Money.FromDollars(25), Money.FromDollars(1));

@@ -73,13 +73,13 @@ public sealed partial class Game
             return player;
         }
 
-        Money change = IncomeStatement.For(player).PassiveIncome * paydayCount;
-        if (change.IsNegative && player.Cash < change.Negate())
+        Money passive = IncomeStatement.For(player).PassiveIncome;
+        if (passive.IsNegative)
         {
-            throw new TurnException("Cash cannot cover the fast-track distribution.");
+            passive = Money.Zero;
         }
 
-        return player.WithCash(player.Cash + change);
+        return player.WithCash(player.Cash + (passive * paydayCount));
     }
 
     private Game ResolveFastTrack(SpaceChoice choice)

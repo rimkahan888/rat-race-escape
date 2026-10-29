@@ -26,7 +26,9 @@ public static class BankLoan
         Money balance = (bank?.Balance ?? Money.Zero) + principal;
         Money monthly = (bank?.MonthlyPayment ?? Money.Zero) + payment;
         others.Add(LoanLiability.Create(Name, balance, monthly));
-        return WithLoans(player, player.Cash + principal, others);
+        Player borrower = WithLoans(player, player.Cash + principal, others);
+        CashFlow.RejectIfNegative(borrower, "That loan would leave monthly cash flow below zero.");
+        return borrower;
     }
 
     public static Player Repay(Player player, int increments)

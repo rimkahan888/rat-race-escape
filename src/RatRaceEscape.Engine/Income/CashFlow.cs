@@ -12,7 +12,8 @@ public sealed class CashFlow
         TotalIncome = totalIncome;
         TotalExpenses = totalExpenses;
         PassiveIncome = passiveIncome;
-        Monthly = totalIncome - totalExpenses;
+        Money raw = totalIncome - totalExpenses;
+        Monthly = raw.IsNegative ? Money.Zero : raw;
         PassiveSurplus = passiveIncome - totalExpenses;
     }
 
@@ -23,7 +24,8 @@ public sealed class CashFlow
     public Money PassiveIncome { get; }
 
     /// <summary>
-    /// Total income minus total expenses. Negative when the bills are larger.
+    /// Total income minus total expenses, never below zero. A month that
+    /// does not cover the bills pays nothing instead of taking cash.
     /// </summary>
     public Money Monthly { get; }
 
@@ -44,5 +46,52 @@ public sealed class CashFlow
     {
         ArgumentNullException.ThrowIfNull(player);
         return From(IncomeStatement.For(player));
+    }
+
+    /// <summary>
+    /// Income minus expenses before the zero floor. Choices use this so a
+    /// loan or purchase cannot hide a shortfall behind the floor.
+    /// </summary>
+    public static Money RawMonthly(Player player)
+    {
+        ArgumentNullException.ThrowIfNull(player);
+        IncomeStatement statement = IncomeStatement.For(player);
+        return statement.TotalIncome - statement.TotalExpenses;
+    }
+
+    /// <summary>
+    /// Refuses a choice whose resulting sheet would take monthly cash flow
+    /// below zero. The player is unchanged because the caller has not stored it.
+    /// </summary>
+    public static void RejectIfNegative(Player player, string reason)
+    {
+        ArgumentNullException.ThrowIfNull(player);
+        ArgumentException.ThrowIfNullOrWhiteSpace(reason);
+
+        if (RawMonthly(player).IsNegative)
+        {
+            throw new TurnException(reason);
+        }
+    }
+
+    /// <summary>
+    /// How many bank-loan increments this player can take without monthly
+    /// cash flow going below zero. Zero when there is no room.
+    /// </summary>
+    public static int BankIncrementsAllowed(Player player)
+    {
+        Money raw = RawMonthly(player);
+        if (!raw.IsPositive)
+        {
+            return 0;
+        }
+
+        long increments = raw.Cents / BankLoan.MonthlyPaymentPerIncrement.Cents;
+        if (increments > int.MaxValue)
+        {
+            return int.MaxValue;
+        }
+
+        return (int)increments;
     }
 }
