@@ -12,7 +12,8 @@ public sealed record GameStateResponse(
     DrawnCardResponse? Drawn,
     IReadOnlyList<PlayerStateResponse> Players,
     int? WinnerIndex,
-    IReadOnlyList<FastTrackDealResponse> FastTrackDeals)
+    IReadOnlyList<FastTrackDealResponse> FastTrackDeals,
+    int? Seed)
 {
     public static GameStateResponse From(Game game)
     {
@@ -82,7 +83,8 @@ public sealed record GameStateResponse(
             DrawnCardResponse.From(game.Drawn),
             players,
             game.WinnerIndex,
-            DealResponses());
+            DealResponses(),
+            game.Seed);
     }
 
     private static FastTrackDealResponse[] DealResponses()

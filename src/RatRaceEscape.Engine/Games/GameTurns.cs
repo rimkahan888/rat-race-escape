@@ -32,7 +32,8 @@ public sealed partial class Game
         }
 
         int extraDieTurns = CurrentPlayer.ExtraDieTurnsRemaining;
-        DiceRoll dice = Dice.Roll(roller, dieCount);
+        IDieRoller source = Seed is int gameSeed ? DiceSequence.After(gameSeed, DiceConsumed) : roller;
+        DiceRoll dice = Dice.Roll(source, dieCount);
         if (CurrentPlayer.Track == BoardTrack.FastTrack)
         {
             return RollFastTrack(dice, extraDieTurns);
@@ -48,7 +49,7 @@ public sealed partial class Game
             moved = moved.WithExtraDieTurns(extraDieTurns - 1);
         }
 
-        return WithPlayer(moved, TurnPhase.AwaitingResolve, roll, pendingDeck: null, drawn: null, Piles);
+        return WithPlayer(moved, TurnPhase.AwaitingResolve, roll, pendingDeck: null, drawn: null, Piles, DiceConsumed + dieCount);
     }
 
     private Game RollFastTrack(DiceRoll dice, int extraDieTurns)
@@ -63,7 +64,7 @@ public sealed partial class Game
             moved = moved.WithExtraDieTurns(extraDieTurns - 1);
         }
 
-        return WithPlayer(moved, TurnPhase.AwaitingResolve, roll, pendingDeck: null, drawn: null, Piles);
+        return WithPlayer(moved, TurnPhase.AwaitingResolve, roll, pendingDeck: null, drawn: null, Piles, DiceConsumed + dice.Faces.Count);
     }
 
     private static Player CollectFastPayday(Player player, int paydayCount)
@@ -140,7 +141,9 @@ public sealed partial class Game
             pendingDeck: null,
             Piles,
             drawn: null,
-            CurrentTurnIndex);
+            CurrentTurnIndex,
+            Seed,
+            DiceConsumed);
     }
 
     /// <summary>
@@ -279,7 +282,10 @@ public sealed partial class Game
             LastRoll,
             DeckHook.Market,
             piles,
-            DrawnCard.From(drawn.Card));
+            DrawnCard.From(drawn.Card),
+            WinnerIndex,
+            Seed,
+            DiceConsumed);
     }
 
     private Game DrawDoodad()
@@ -329,7 +335,9 @@ public sealed partial class Game
                 pendingDeck: null,
                 piles,
                 drawn: null,
-                WinnerIndex);
+                WinnerIndex,
+                Seed,
+                DiceConsumed);
         }
 
         Player[] players = Players.ToArray();
@@ -375,7 +383,9 @@ public sealed partial class Game
             pendingDeck: null,
             piles,
             drawn: null,
-            WinnerIndex);
+            WinnerIndex,
+            Seed,
+            DiceConsumed);
     }
 
     private static bool AnySolvent(IReadOnlyList<Player> players)
@@ -427,11 +437,24 @@ public sealed partial class Game
         TurnRoll? lastRoll,
         DeckHook? pendingDeck,
         DrawnCard? drawn,
-        CardPiles piles)
+        CardPiles piles,
+        int? diceConsumed = null)
     {
         Player[] players = Players.ToArray();
         players[CurrentTurnIndex] = player;
-        return new Game(Id, players, CurrentTurnIndex, Phase, turnPhase, lastRoll, pendingDeck, piles, drawn, WinnerIndex);
+        return new Game(
+            Id,
+            players,
+            CurrentTurnIndex,
+            Phase,
+            turnPhase,
+            lastRoll,
+            pendingDeck,
+            piles,
+            drawn,
+            WinnerIndex,
+            Seed,
+            diceConsumed ?? DiceConsumed);
     }
 
     private Game WithTurn(
@@ -442,6 +465,18 @@ public sealed partial class Game
         DrawnCard? drawn,
         CardPiles piles)
     {
-        return new Game(Id, Players, currentTurnIndex, Phase, turnPhase, lastRoll, pendingDeck, piles, drawn, WinnerIndex);
+        return new Game(
+            Id,
+            Players,
+            currentTurnIndex,
+            Phase,
+            turnPhase,
+            lastRoll,
+            pendingDeck,
+            piles,
+            drawn,
+            WinnerIndex,
+            Seed,
+            DiceConsumed);
     }
 }

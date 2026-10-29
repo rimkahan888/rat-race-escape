@@ -21,7 +21,9 @@ public sealed partial class Game
         DeckHook? pendingDeck,
         CardPiles piles,
         DrawnCard? drawn,
-        int? winnerIndex = null)
+        int? winnerIndex = null,
+        int? seed = null,
+        int diceConsumed = 0)
     {
         ArgumentNullException.ThrowIfNull(piles);
         Id = id;
@@ -34,6 +36,8 @@ public sealed partial class Game
         Piles = piles;
         Drawn = drawn;
         WinnerIndex = winnerIndex;
+        Seed = seed;
+        DiceConsumed = diceConsumed;
     }
 
     public Guid Id { get; }
@@ -77,6 +81,17 @@ public sealed partial class Game
     /// </summary>
     public DrawnCard? Drawn { get; }
 
+    /// <summary>
+    /// Optional seed for the dice and the opening shuffle. Null uses the
+    /// roller and shuffle passed in by the caller.
+    /// </summary>
+    public int? Seed { get; }
+
+    /// <summary>
+    /// How many die faces this table has already taken from <see cref="Seed"/>.
+    /// </summary>
+    public int DiceConsumed { get; }
+
     public Player CurrentPlayer => Players[CurrentTurnIndex];
 
     public static Game Create(IReadOnlyList<PlayerSetup> setups) => Create(Guid.NewGuid(), setups);
@@ -87,13 +102,25 @@ public sealed partial class Game
     public static Game Create(Guid id, IReadOnlyList<PlayerSetup> setups) =>
         Create(id, setups, new IdentityShuffle());
 
+    public static Game Create(IReadOnlyList<PlayerSetup> setups, int seed) =>
+        Create(Guid.NewGuid(), setups, new RandomShuffle(seed), seed);
+
     public static Game Create(Guid id, IReadOnlyList<PlayerSetup> setups, IShuffle shuffle)
     {
         ArgumentNullException.ThrowIfNull(shuffle);
         return Create(id, setups, CardPiles.Create(shuffle));
     }
 
-    public static Game Create(Guid id, IReadOnlyList<PlayerSetup> setups, CardPiles piles)
+    public static Game Create(Guid id, IReadOnlyList<PlayerSetup> setups, IShuffle shuffle, int seed)
+    {
+        ArgumentNullException.ThrowIfNull(shuffle);
+        return Create(id, setups, CardPiles.Create(shuffle), seed);
+    }
+
+    public static Game Create(Guid id, IReadOnlyList<PlayerSetup> setups, CardPiles piles) =>
+        Create(id, setups, piles, seed: null);
+
+    public static Game Create(Guid id, IReadOnlyList<PlayerSetup> setups, CardPiles piles, int? seed)
     {
         ArgumentNullException.ThrowIfNull(piles);
         ArgumentNullException.ThrowIfNull(setups);
@@ -177,7 +204,10 @@ public sealed partial class Game
             lastRoll: null,
             pendingDeck: null,
             piles,
-            drawn: null);
+            drawn: null,
+            winnerIndex: null,
+            seed,
+            diceConsumed: 0);
     }
 
     private static Profession? ResolveProfession(string? professionId, List<string> errors)
