@@ -29,6 +29,11 @@ public class FastTrackBoardTests
         Assert.Equal("Dream Listing", FastTrackBoard.At(3).Title);
         Assert.Equal(Money.FromDollars(1_000), FastTrackBoard.Windfall);
         Assert.Equal(Money.FromDollars(300), FastTrackBoard.Setback);
+        Assert.Equal(Money.FromDollars(100_000), FastTrackBoard.DreamPrice);
+        Assert.Equal(Money.FromDollars(100_000), FastTrackBoard.PriceAt(3));
+        Assert.Equal(Money.FromDollars(150_000), FastTrackBoard.PriceAt(7));
+        Assert.Equal(Money.FromDollars(200_000), FastTrackBoard.PriceAt(11));
+        Assert.Equal(3, FastTrackBoard.Deals.Count);
 
         foreach (FastTrackSpace space in FastTrackBoard.Spaces)
         {

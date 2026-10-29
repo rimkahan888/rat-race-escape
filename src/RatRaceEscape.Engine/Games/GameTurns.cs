@@ -73,13 +73,7 @@ public sealed partial class Game
             return player;
         }
 
-        Money passive = IncomeStatement.For(player).PassiveIncome;
-        if (passive.IsNegative)
-        {
-            passive = Money.Zero;
-        }
-
-        return player.WithCash(player.Cash + (passive * paydayCount));
+        return player.WithCash(player.Cash + (CashFlow.For(player).Monthly * paydayCount));
     }
 
     private Game ResolveFastTrack(SpaceChoice choice)
@@ -127,12 +121,13 @@ public sealed partial class Game
             throw new TurnException("A dream listing needs a claim or a decline.");
         }
 
-        if (CurrentPlayer.Cash < FastTrackBoard.DreamPrice)
+        Money price = FastTrackBoard.PriceAt(CurrentPlayer.BoardIndex);
+        if (CurrentPlayer.Cash < price)
         {
             throw new TurnException("Cash cannot cover the dream.");
         }
 
-        Player buyer = CurrentPlayer.WithCash(CurrentPlayer.Cash - FastTrackBoard.DreamPrice);
+        Player buyer = CurrentPlayer.WithCash(CurrentPlayer.Cash - price);
         Player[] players = Players.ToArray();
         players[CurrentTurnIndex] = buyer;
         return new Game(

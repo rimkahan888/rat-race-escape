@@ -45,7 +45,25 @@ public sealed class CashFlow
     public static CashFlow For(Player player)
     {
         ArgumentNullException.ThrowIfNull(player);
-        return From(IncomeStatement.For(player));
+        IncomeStatement statement = IncomeStatement.For(player);
+        if (player.Track != BoardTrack.FastTrack)
+        {
+            return From(statement);
+        }
+
+        // The fast track pays passive income. Salary is no longer part of it.
+        Money passive = statement.PassiveIncome.IsNegative ? Money.Zero : statement.PassiveIncome;
+        return From(IncomeStatement.Create(
+            Money.Zero,
+            passive,
+            Money.Zero,
+            Money.Zero,
+            Money.Zero,
+            Money.Zero,
+            Money.Zero,
+            Money.Zero,
+            childCount: 0,
+            Money.Zero));
     }
 
     /// <summary>

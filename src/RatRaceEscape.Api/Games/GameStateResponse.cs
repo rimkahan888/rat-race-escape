@@ -11,7 +11,8 @@ public sealed record GameStateResponse(
     string? PendingDeck,
     DrawnCardResponse? Drawn,
     IReadOnlyList<PlayerStateResponse> Players,
-    int? WinnerIndex)
+    int? WinnerIndex,
+    IReadOnlyList<FastTrackDealResponse> FastTrackDeals)
 {
     public static GameStateResponse From(Game game)
     {
@@ -22,7 +23,7 @@ public sealed record GameStateResponse(
         {
             Player player = game.Players[index];
             IncomeStatement income = IncomeStatement.For(player);
-            CashFlow cashFlow = CashFlow.From(income);
+            CashFlow cashFlow = CashFlow.For(player);
             string spaceKind;
             string spaceTitle;
             if (player.Track == BoardTrack.FastTrack)
@@ -80,7 +81,25 @@ public sealed record GameStateResponse(
             game.PendingDeck?.ToString(),
             DrawnCardResponse.From(game.Drawn),
             players,
-            game.WinnerIndex);
+            game.WinnerIndex,
+            DealResponses());
+    }
+
+    private static FastTrackDealResponse[] DealResponses()
+    {
+        FastTrackDealResponse[] deals = new FastTrackDealResponse[FastTrackBoard.Deals.Count];
+        for (int index = 0; index < deals.Length; index++)
+        {
+            FastTrackDeal deal = FastTrackBoard.Deals[index];
+            deals[index] = new FastTrackDealResponse(
+                deal.Id,
+                deal.Title,
+                deal.Summary,
+                deal.Cost.Cents,
+                deal.MonthlyCashFlow.Cents);
+        }
+
+        return deals;
     }
 
     private static LoanResponse[] LoansOf(Player player)
@@ -226,6 +245,13 @@ public sealed record DrawnCardResponse(
             cashDelta?.Cents);
     }
 }
+
+public sealed record FastTrackDealResponse(
+    string Id,
+    string Title,
+    string Summary,
+    long CostCents,
+    long MonthlyCashFlowCents);
 
 public sealed record TurnRollResponse(
     IReadOnlyList<int> Faces,
