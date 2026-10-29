@@ -92,6 +92,37 @@ public sealed class StartGameTests : IClassFixture<RatRaceEscapeApiFactory>
     }
 
     [Fact]
+    public async Task Start_seats_a_clone_with_the_same_profession()
+    {
+        HttpResponseMessage response = await PostAsync(
+            """
+            {
+              "clone": true,
+              "players": [
+                { "name": "Ava", "professionId": "night-baker", "tokenColour": "Amber" }
+              ]
+            }
+            """);
+
+        string body = await response.Content.ReadAsStringAsync();
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        using JsonDocument document = JsonDocument.Parse(body);
+        JsonElement players = document.RootElement.GetProperty("players");
+        Assert.Equal(2, players.GetArrayLength());
+        Assert.False(players[0].GetProperty("isClone").GetBoolean());
+        Assert.True(players[1].GetProperty("isClone").GetBoolean());
+        Assert.Equal("night-baker", players[1].GetProperty("professionId").GetString());
+        Assert.Equal(players[0].GetProperty("cashCents").GetInt64(), players[1].GetProperty("cashCents").GetInt64());
+        Assert.NotEqual(players[0].GetProperty("tokenColour").GetString(), players[1].GetProperty("tokenColour").GetString());
+
+        Guid id = document.RootElement.GetProperty("id").GetGuid();
+        HttpResponseMessage step = await _client.PostAsync(new Uri($"/games/{id}/clone-step", UriKind.Relative), null);
+        string stepBody = await step.Content.ReadAsStringAsync();
+        Assert.Equal(HttpStatusCode.Conflict, step.StatusCode);
+        Assert.Contains("It is not the clone's turn.", stepBody, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task Start_rejects_an_unknown_profession()
     {
         await AssertBadRequest(

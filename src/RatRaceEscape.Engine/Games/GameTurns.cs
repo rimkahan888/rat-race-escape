@@ -143,7 +143,8 @@ public sealed partial class Game
             drawn: null,
             CurrentTurnIndex,
             Seed,
-            DiceConsumed);
+            DiceConsumed,
+            CloneIndex);
     }
 
     /// <summary>
@@ -285,7 +286,8 @@ public sealed partial class Game
             DrawnCard.From(drawn.Card),
             WinnerIndex,
             Seed,
-            DiceConsumed);
+            DiceConsumed,
+            CloneIndex);
     }
 
     private Game DrawDoodad()
@@ -337,7 +339,8 @@ public sealed partial class Game
                 drawn: null,
                 WinnerIndex,
                 Seed,
-                DiceConsumed);
+                DiceConsumed,
+                CloneIndex);
         }
 
         Player[] players = Players.ToArray();
@@ -385,7 +388,8 @@ public sealed partial class Game
             drawn: null,
             WinnerIndex,
             Seed,
-            DiceConsumed);
+            DiceConsumed,
+            CloneIndex);
     }
 
     private static bool AnySolvent(IReadOnlyList<Player> players)
@@ -454,7 +458,8 @@ public sealed partial class Game
             drawn,
             WinnerIndex,
             Seed,
-            diceConsumed ?? DiceConsumed);
+            diceConsumed ?? DiceConsumed,
+            CloneIndex);
     }
 
     private Game WithTurn(
@@ -477,6 +482,7 @@ public sealed partial class Game
             drawn,
             WinnerIndex,
             Seed,
-            DiceConsumed);
+            DiceConsumed,
+            CloneIndex);
     }
 }

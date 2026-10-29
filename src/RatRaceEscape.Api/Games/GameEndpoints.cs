@@ -62,6 +62,10 @@ public static class GameEndpoints
             .WithName("BuyFastTrackDeal")
             .WithTags("Games");
 
+        endpoints.MapPost("/games/{id:guid}/clone-step", CloneStep)
+            .WithName("CloneStep")
+            .WithTags("Games");
+
         return endpoints;
     }
 
@@ -98,6 +102,11 @@ public static class GameEndpoints
     private static IResult BuyFastTrackDeal(Guid id, FastTrackDealRequest? request, IGameRepository games)
     {
         return Play(id, games, game => game.BuyFastTrackDeal(request?.Id));
+    }
+
+    private static IResult CloneStep(Guid id, IGameRepository games, IDieRoller dice)
+    {
+        return Play(id, games, game => CloneTurn.Step(game, dice));
     }
 
     private static IResult Buy(Guid id, BuyRequest? request, IGameRepository games)
@@ -190,6 +199,17 @@ public static class GameEndpoints
             setups.Add(new PlayerSetup(player.Name!, player.ProfessionId!, colour));
         }
 
+        bool withClone = request.VersusClone == true;
+        if (withClone && setups.Count != 1 && errors.Count == 0)
+        {
+            errors.Add("A clone game seats one player.");
+        }
+
+        if (withClone && setups.Count == 1 && errors.Count == 0)
+        {
+            setups.Add(CloneSeat.Beside(setups[0]));
+        }
+
         if (errors.Count > 0)
         {
             if (errors.Any(error => error.StartsWith("Token colour '", StringComparison.Ordinal)))
@@ -205,6 +225,11 @@ public static class GameEndpoints
             Game game = request.Seed is int seed
                 ? Game.Create(setups, seed)
                 : Game.Create(setups, shuffle);
+            if (withClone)
+            {
+                game = game.SeatClone(1);
+            }
+
             games.Add(game);
             return Results.Created($"/games/{game.Id}", GameStateResponse.From(game));
         }

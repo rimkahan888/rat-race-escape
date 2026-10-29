@@ -23,7 +23,8 @@ public sealed partial class Game
         DrawnCard? drawn,
         int? winnerIndex = null,
         int? seed = null,
-        int diceConsumed = 0)
+        int diceConsumed = 0,
+        int? cloneIndex = null)
     {
         ArgumentNullException.ThrowIfNull(piles);
         Id = id;
@@ -38,6 +39,7 @@ public sealed partial class Game
         WinnerIndex = winnerIndex;
         Seed = seed;
         DiceConsumed = diceConsumed;
+        CloneIndex = cloneIndex;
     }
 
     public Guid Id { get; }
@@ -91,6 +93,34 @@ public sealed partial class Game
     /// How many die faces this table has already taken from <see cref="Seed"/>.
     /// </summary>
     public int DiceConsumed { get; }
+
+    /// <summary>
+    /// Seat of the clone, or null when every chair is a person.
+    /// </summary>
+    public int? CloneIndex { get; }
+
+    public Game SeatClone(int index)
+    {
+        if (index < 0 || index >= Players.Count)
+        {
+            throw new GameValidationException(["The clone is not seated."]);
+        }
+
+        return new Game(
+            Id,
+            Players,
+            CurrentTurnIndex,
+            Phase,
+            TurnPhase,
+            LastRoll,
+            PendingDeck,
+            Piles,
+            Drawn,
+            WinnerIndex,
+            Seed,
+            DiceConsumed,
+            index);
+    }
 
     public Player CurrentPlayer => Players[CurrentTurnIndex];
 
@@ -207,7 +237,8 @@ public sealed partial class Game
             drawn: null,
             winnerIndex: null,
             seed,
-            diceConsumed: 0);
+            diceConsumed: 0,
+            cloneIndex: null);
     }
 
     private static Profession? ResolveProfession(string? professionId, List<string> errors)
