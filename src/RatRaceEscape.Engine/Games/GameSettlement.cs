@@ -60,19 +60,21 @@ public sealed partial class Game
 
     private Game SettleDownsized()
     {
+        // The bill is the expenses already on the sheet. A loan taken to pay
+        // it adds a payment for later months and does not raise this bill.
         Money due = IncomeStatement.For(CurrentPlayer).TotalExpenses;
         if (CurrentPlayer.Cash >= due)
         {
             throw new TurnException("Cash covers this expense.");
         }
 
-        Player raised = ForcedSale.Raise(CurrentPlayer, due);
-        if (raised.Cash >= due)
+        Player covered = Shortfall.Cover(CurrentPlayer, due);
+        if (!covered.IsBankrupt)
         {
-            return WithPlayer(Downsized.Apply(raised), TurnPhase.AwaitingEnd, LastRoll, pendingDeck: null, drawn: null, Piles);
+            covered = covered.WithSkipTurnsRemaining(covered.SkipTurnsRemaining + Downsized.SkippedTurns);
         }
 
-        return WithPlayer(Bankruptcy.Apply(raised), TurnPhase.AwaitingEnd, LastRoll, pendingDeck: null, drawn: null, Piles);
+        return WithPlayer(covered, TurnPhase.AwaitingEnd, LastRoll, pendingDeck: null, drawn: null, Piles);
     }
 
     private Game SettleDoodad()

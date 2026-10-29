@@ -1,10 +1,11 @@
 namespace RatRaceEscape.Engine;
 
 /// <summary>
-/// Hours cut collects the player's total expenses and makes them miss the
-/// next two times the dice would reach them. The turn they landed on still
-/// finishes. When cash cannot cover the expenses, nothing is taken and the
-/// turn stays open for a later way to pay.
+/// Hours cut collects the player's total expenses, as they stand before any
+/// loan taken to pay this bill, and makes them miss the next two times the
+/// dice would reach them. The turn they landed on still finishes. When cash
+/// cannot cover the expenses, nothing is taken and the turn stays open for
+/// settlement.
 /// </summary>
 public static class Downsized
 {
