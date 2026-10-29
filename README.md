@@ -35,7 +35,7 @@ npm install
 npm run dev
 ```
 
-Vite serves the client at `http://localhost:5173`. The screen is a dark table shell until the board arrives later in the week.
+Vite serves the client at `http://localhost:5173` and proxies game requests to the API. The opening screen seats you against your clone, or two to four people, on the island board.
 
 ## Test
 

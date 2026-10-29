@@ -3,13 +3,12 @@ import { describe, expect, it } from 'vitest'
 import App from './App.vue'
 
 describe('App', () => {
-  it('shows the game name and an empty table', () => {
+  it('opens on a new table with the clone as the default seat', () => {
     const wrapper = mount(App)
 
     expect(wrapper.text()).toContain('Rat Race Escape')
     expect(wrapper.text()).toContain('No game in progress')
-    expect(wrapper.get('[aria-label="Game table"]').text()).toContain(
-      'The month still owns the calendar.',
-    )
+    expect(wrapper.text()).toContain('Me vs my clone')
+    expect(wrapper.get('[aria-label="Game table"]').text()).toContain('Sit down')
   })
 })
