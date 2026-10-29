@@ -65,7 +65,8 @@ public sealed record GameStateResponse(
                 BusinessesOf(player),
                 player.Track.ToString(),
                 player.IsBankrupt,
-                LoansOf(player));
+                LoansOf(player),
+                game.CloneIndex == index);
         }
 
         TurnRoll? roll = game.LastRoll;
@@ -287,7 +288,8 @@ public sealed record PlayerStateResponse(
     IReadOnlyList<BusinessHoldingResponse> Businesses,
     string Track,
     bool IsBankrupt,
-    IReadOnlyList<LoanResponse> Loans);
+    IReadOnlyList<LoanResponse> Loans,
+    bool IsClone);
 
 public sealed record LoanResponse(string Name, long BalanceCents, long MonthlyPaymentCents);
 
