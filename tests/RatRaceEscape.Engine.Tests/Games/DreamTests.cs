@@ -7,18 +7,19 @@ public class DreamTests
     [Fact]
     public void Buying_the_dream_pays_the_price_and_wins_the_game()
     {
-        Game landed = Ready().Roll(new ScriptedDieRoller([3]));
+        Game landed = Ready();
         Money cash = landed.CurrentPlayer.Cash;
 
-        Assert.Equal(7, landed.CurrentPlayer.BoardIndex);
-        Assert.Equal(FastTrackKind.Dream, FastTrackBoard.At(7).Kind);
-        Assert.True(cash >= FastTrackBoard.DreamPrice);
+        Assert.Equal(FastTrackKind.Dream, FastTrackBoard.At(landed.CurrentPlayer.BoardIndex).Kind);
+        Money price = FastTrackBoard.PriceAt(landed.CurrentPlayer.BoardIndex);
+        Assert.True(cash >= price);
+        Assert.True(landed.LastRoll is not null);
 
         Game won = landed.Resolve(SpaceChoice.ClaimDream);
 
         Assert.Equal(GamePhase.Won, won.Phase);
         Assert.Equal(0, won.WinnerIndex);
-        Assert.Equal(cash - FastTrackBoard.DreamPrice, won.CurrentPlayer.Cash);
+        Assert.Equal(cash - price, won.CurrentPlayer.Cash);
         Assert.Equal(BoardTrack.FastTrack, won.CurrentPlayer.Track);
         Assert.Equal(TurnPhase.AwaitingEnd, won.TurnPhase);
         Assert.Equal(GamePhase.RatRace, landed.Phase);
@@ -33,7 +34,7 @@ public class DreamTests
     [Fact]
     public void Declining_the_dream_keeps_the_cash_and_the_game()
     {
-        Game landed = Ready().Roll(new ScriptedDieRoller([3]));
+        Game landed = Bought().LeaveRatRace().EndTurn().Roll(new ScriptedDieRoller([3]));
 
         Game declined = landed.Resolve(SpaceChoice.Decline);
 
@@ -41,7 +42,7 @@ public class DreamTests
         Assert.Null(declined.WinnerIndex);
         Assert.Equal(landed.CurrentPlayer.Cash, declined.CurrentPlayer.Cash);
         Assert.Equal(TurnPhase.AwaitingEnd, declined.TurnPhase);
-        Assert.Equal(7, declined.CurrentPlayer.BoardIndex);
+        Assert.Equal(3, declined.CurrentPlayer.BoardIndex);
     }
 
     [Fact]
@@ -56,14 +57,16 @@ public class DreamTests
         Assert.Equal(GamePhase.RatRace, landed.Phase);
         Assert.Null(landed.WinnerIndex);
         Assert.Equal(TurnPhase.AwaitingResolve, landed.TurnPhase);
-        Assert.Equal(Money.FromDollars(5_000), FastTrackBoard.DreamPrice);
+        Assert.Equal(Money.FromDollars(100_000), FastTrackBoard.PriceAt(3));
+        Assert.Equal(Money.FromDollars(150_000), FastTrackBoard.PriceAt(7));
+        Assert.Equal(Money.FromDollars(200_000), FastTrackBoard.PriceAt(11));
     }
 
     [Fact]
     public void The_other_player_does_not_win_when_the_dream_is_bought()
     {
         Game bought = Bought(twoPlayers: true).LeaveRatRace();
-        Game won = PlayToDream(bought).Resolve(SpaceChoice.ClaimDream);
+        Game won = PlayUntilAffordableDream(bought).Resolve(SpaceChoice.ClaimDream);
 
         Assert.Equal(0, won.WinnerIndex);
         Assert.Equal("Ava", won.Players[won.WinnerIndex!.Value].Name);
@@ -75,14 +78,63 @@ public class DreamTests
 
     private static Game Ready()
     {
-        return Bought().LeaveRatRace().EndTurn().Roll(new ScriptedDieRoller([4])).Resolve().EndTurn();
+        return PlayUntilAffordableDream(Bought().LeaveRatRace());
     }
 
-    private static Game PlayToDream(Game left)
+    private static Game PlayUntilAffordableDream(Game left)
     {
-        Game ava = FinishRatRace(left.EndTurn());
-        Game afterPayday = FinishRatRace(ava.Roll(new ScriptedDieRoller([4])).Resolve().EndTurn());
-        return afterPayday.Roll(new ScriptedDieRoller([3]));
+        Game game = left;
+        int rolls = 0;
+        int steps = 0;
+        for (int guard = 0; guard < 200 && game.Phase == GamePhase.RatRace; guard++)
+        {
+            if (game.CurrentPlayer.Track != BoardTrack.FastTrack)
+            {
+                game = FinishRatRace(game);
+                continue;
+            }
+
+            if (game.TurnPhase == TurnPhase.AwaitingRoll)
+            {
+                game = game.Roll(new ScriptedDieRoller([5]));
+                rolls++;
+                steps += 5;
+                continue;
+            }
+
+            if (game.TurnPhase == TurnPhase.AwaitingResolve)
+            {
+                FastTrackKind kind = FastTrackBoard.At(game.CurrentPlayer.BoardIndex).Kind;
+                if (kind == FastTrackKind.Dream
+                    && game.CurrentPlayer.Cash >= FastTrackBoard.PriceAt(game.CurrentPlayer.BoardIndex))
+                {
+                    Assert.True(rolls >= 8, $"The dream arrived after {rolls} rolls.");
+                    Assert.True(steps >= 36, $"The dream arrived after {steps} spaces.");
+                    return game;
+                }
+
+                if (kind == FastTrackKind.Dream)
+                {
+                    game = game.Resolve(SpaceChoice.Decline);
+                    continue;
+                }
+
+                try
+                {
+                    game = game.Resolve();
+                }
+                catch (TurnException)
+                {
+                    game = game.Settle();
+                }
+
+                continue;
+            }
+
+            game = game.EndTurn();
+        }
+
+        throw new InvalidOperationException("The dream was not reached.");
     }
 
     private static Game FinishRatRace(Game game)
@@ -95,7 +147,21 @@ public class DreamTests
             SpaceKind.Deal => SpaceChoice.SmallDeal,
             _ => SpaceChoice.None,
         };
-        Game resolved = rolled.Resolve(choice);
+        Game resolved;
+        try
+        {
+            resolved = rolled.Resolve(choice);
+        }
+        catch (TurnException)
+        {
+            resolved = rolled.Settle();
+        }
+
+        if (resolved.CurrentPlayer.IsBankrupt)
+        {
+            return resolved.EndTurn();
+        }
+
         if (resolved.Drawn is not null)
         {
             resolved = resolved.Pass();

@@ -14,7 +14,11 @@ public static class FastTrackBoard
 
     public static readonly Money Setback = Money.FromDollars(300);
 
-    public static readonly Money DreamPrice = Money.FromDollars(5_000);
+    /// <summary>
+    /// The least expensive dream. The other listings cost more, so a player
+    /// who just left the rat race needs several laps of paydays to buy one.
+    /// </summary>
+    public static readonly Money DreamPrice = Money.FromDollars(100_000);
 
     private const string PayTitle = "Distribution Desk";
 
@@ -49,6 +53,62 @@ public static class FastTrackBoard
     ];
 
     public static IReadOnlyList<FastTrackSpace> Spaces { get; } = Build();
+
+    public static IReadOnlyList<FastTrackDeal> Deals { get; } =
+    [
+        FastTrackDeal.Create(
+            "slip-lease",
+            "Slip Lease",
+            "A leased slip beside the harbor office. It pays every month.",
+            Money.FromDollars(8_000),
+            Money.FromDollars(500)),
+        FastTrackDeal.Create(
+            "charter-book",
+            "Charter Book",
+            "A season of weekend charters, paid for up front.",
+            Money.FromDollars(20_000),
+            Money.FromDollars(1_200)),
+        FastTrackDeal.Create(
+            "marina-share",
+            "Marina Share",
+            "A share of the marina office and its mooring fees.",
+            Money.FromDollars(45_000),
+            Money.FromDollars(2_500)),
+    ];
+
+    public static FastTrackDeal? FindDeal(string? id)
+    {
+        if (string.IsNullOrWhiteSpace(id))
+        {
+            return null;
+        }
+
+        foreach (FastTrackDeal deal in Deals)
+        {
+            if (deal.Id.Equals(id.Trim(), StringComparison.OrdinalIgnoreCase))
+            {
+                return deal;
+            }
+        }
+
+        return null;
+    }
+
+    public static Money PriceAt(int index)
+    {
+        if (At(index).Kind != FastTrackKind.Dream)
+        {
+            throw new ArgumentOutOfRangeException(nameof(index), "That space is not a dream listing.");
+        }
+
+        return index switch
+        {
+            3 => Money.FromDollars(100_000),
+            7 => Money.FromDollars(150_000),
+            11 => Money.FromDollars(200_000),
+            _ => throw new InvalidOperationException("A dream listing is missing its price."),
+        };
+    }
 
     public static FastTrackSpace At(int index)
     {

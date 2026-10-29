@@ -37,6 +37,8 @@ public class FastTrackTests
         Assert.Equal(0, rolled.LastRoll.FromIndex);
         Assert.Equal(Money.FromDollars(10_000), rolled.LastRoll.PaydayCash);
         Assert.Equal(Money.FromDollars(899) + Money.FromDollars(10_000), rolled.CurrentPlayer.Cash);
+        Assert.Equal(Money.FromDollars(10_000), CashFlow.For(rolled.CurrentPlayer).Monthly);
+        Assert.True(CashFlow.From(IncomeStatement.For(rolled.CurrentPlayer)).Monthly > CashFlow.For(rolled.CurrentPlayer).Monthly);
 
         Game resolved = rolled.Resolve();
 
@@ -105,6 +107,23 @@ public class FastTrackTests
         Assert.Contains("Resolve the space before leaving the rat race.", open.Errors);
         Assert.Equal(BoardTrack.RatRace, waiting.CurrentPlayer.Track);
         Assert.Equal(TurnPhase.AwaitingResolve, rolled.TurnPhase);
+    }
+
+    [Fact]
+    public void A_fast_track_deal_adds_passive_income_and_not_salary()
+    {
+        Game paid = Bought().LeaveRatRace().EndTurn().Roll(new ScriptedDieRoller([4])).Resolve().EndTurn();
+        Money before = CashFlow.For(paid.CurrentPlayer).Monthly;
+
+        Game bought = paid.BuyFastTrackDeal("slip-lease");
+
+        Assert.Equal(before + Money.FromDollars(500), CashFlow.For(bought.CurrentPlayer).Monthly);
+        Assert.Equal(Money.FromDollars(10_500), IncomeStatement.For(bought.CurrentPlayer).PassiveIncome);
+        Assert.Equal(Money.FromDollars(2_800), IncomeStatement.For(bought.CurrentPlayer).Salary);
+        Assert.Equal(paid.CurrentPlayer.Cash - Money.FromDollars(8_000), bought.CurrentPlayer.Cash);
+        Assert.Equal("Slip Lease", Assert.Single(bought.CurrentPlayer.BalanceSheet.Businesses, business => business.Name == "Slip Lease").Name);
+        TurnException early = Assert.Throws<TurnException>(() => paid.Roll(new ScriptedDieRoller([1])).BuyFastTrackDeal("slip-lease"));
+        Assert.Contains("Resolve the space before buying a fast-track deal.", early.Errors);
     }
 
     private static Game Bought(bool twoPlayers = false)

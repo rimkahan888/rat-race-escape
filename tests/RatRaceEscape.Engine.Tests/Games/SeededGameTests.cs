@@ -156,7 +156,7 @@ public class SeededGameTests
         FastTrackKind kind = FastTrackBoard.At(game.CurrentPlayer.BoardIndex).Kind;
         if (kind == FastTrackKind.Dream)
         {
-            SpaceChoice choice = game.CurrentPlayer.Cash >= FastTrackBoard.DreamPrice
+            SpaceChoice choice = game.CurrentPlayer.Cash >= FastTrackBoard.PriceAt(game.CurrentPlayer.BoardIndex)
                 ? SpaceChoice.ClaimDream
                 : SpaceChoice.Decline;
             return game.Resolve(choice);

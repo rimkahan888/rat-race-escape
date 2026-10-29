@@ -58,6 +58,10 @@ public static class GameEndpoints
             .WithName("LeaveRatRace")
             .WithTags("Games");
 
+        endpoints.MapPost("/games/{id:guid}/fast-track-deal", BuyFastTrackDeal)
+            .WithName("BuyFastTrackDeal")
+            .WithTags("Games");
+
         return endpoints;
     }
 
@@ -89,6 +93,11 @@ public static class GameEndpoints
     private static IResult Leave(Guid id, IGameRepository games)
     {
         return Play(id, games, game => game.LeaveRatRace());
+    }
+
+    private static IResult BuyFastTrackDeal(Guid id, FastTrackDealRequest? request, IGameRepository games)
+    {
+        return Play(id, games, game => game.BuyFastTrackDeal(request?.Id));
     }
 
     private static IResult Buy(Guid id, BuyRequest? request, IGameRepository games)
@@ -200,5 +209,7 @@ public sealed record RollRequest(int? DieCount);
 public sealed record ResolveRequest(SpaceChoice? Choice);
 
 public sealed record BuyRequest(int? Shares);
+
+public sealed record FastTrackDealRequest(string? Id);
 
 public sealed record LoanRequest(int? Increments);
