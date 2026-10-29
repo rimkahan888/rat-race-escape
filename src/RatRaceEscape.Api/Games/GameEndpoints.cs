@@ -175,23 +175,36 @@ public static class GameEndpoints
                 continue;
             }
 
-            if (player.TokenColour is null)
+            if (string.IsNullOrWhiteSpace(player.TokenColour))
             {
                 errors.Add("Token colour is required.");
                 continue;
             }
 
-            setups.Add(new PlayerSetup(player.Name!, player.ProfessionId!, player.TokenColour.Value));
+            if (!TryTokenColour(player.TokenColour, out TokenColour colour))
+            {
+                errors.Add(TokenColourMessage(player.TokenColour));
+                continue;
+            }
+
+            setups.Add(new PlayerSetup(player.Name!, player.ProfessionId!, colour));
         }
 
         if (errors.Count > 0)
         {
+            if (errors.Any(error => error.StartsWith("Token colour '", StringComparison.Ordinal)))
+            {
+                return TokenColourProblem(errors);
+            }
+
             return Results.BadRequest(new GameRequestError(errors));
         }
 
         try
         {
-            Game game = Game.Create(setups, shuffle);
+            Game game = request.Seed is int seed
+                ? Game.Create(setups, seed)
+                : Game.Create(setups, shuffle);
             games.Add(game);
             return Results.Created($"/games/{game.Id}", GameStateResponse.From(game));
         }
@@ -199,6 +212,31 @@ public static class GameEndpoints
         {
             return Results.BadRequest(new GameRequestError(exception.Errors));
         }
+    }
+
+    private static bool TryTokenColour(string text, out TokenColour colour)
+    {
+        string trimmed = text.Trim();
+        if (!Enum.TryParse(trimmed, ignoreCase: true, out colour) || !Enum.IsDefined(colour))
+        {
+            colour = default;
+            return false;
+        }
+
+        return colour.ToString().Equals(trimmed, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string TokenColourMessage(string text)
+    {
+        return $"Token colour '{text.Trim()}' is not a playing colour. Choose Amber, Cobalt, Fern, Coral, Violet, or Slate.";
+    }
+
+    private static IResult TokenColourProblem(IReadOnlyList<string> errors)
+    {
+        return Results.Problem(
+            title: "Token colour is not a playing colour.",
+            detail: string.Join(' ', errors),
+            statusCode: StatusCodes.Status400BadRequest);
     }
 }
 

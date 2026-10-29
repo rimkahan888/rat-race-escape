@@ -154,8 +154,56 @@ public sealed class StartGameTests : IClassFixture<RatRaceEscapeApiFactory>
         HttpResponseMessage response = await PostAsync(OnePlayer("Ava", "night-baker", "Chartreuse"));
         string body = await response.Content.ReadAsStringAsync();
 
-        Assert.True(response.StatusCode == HttpStatusCode.BadRequest, body);
-        Assert.DoesNotContain("RatRace", body);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal("application/problem+json", response.Content.Headers.ContentType?.MediaType);
+        Assert.DoesNotContain("at ", body, StringComparison.Ordinal);
+        Assert.DoesNotContain("Exception", body, StringComparison.Ordinal);
+        using JsonDocument document = JsonDocument.Parse(body);
+        Assert.Equal(400, document.RootElement.GetProperty("status").GetInt32());
+        Assert.Equal("Token colour is not a playing colour.", document.RootElement.GetProperty("title").GetString());
+        Assert.Contains("Chartreuse", document.RootElement.GetProperty("detail").GetString(), StringComparison.Ordinal);
+        Assert.Contains("Amber", document.RootElement.GetProperty("detail").GetString(), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task The_same_seed_repeats_the_first_roll()
+    {
+        const string Body = """
+            {
+              "seed": 42,
+              "players": [
+                { "name": "Ava", "professionId": "night-baker", "tokenColour": "Amber" }
+              ]
+            }
+            """;
+
+        HttpResponseMessage first = await PostAsync(Body);
+        HttpResponseMessage second = await PostAsync(Body);
+        string firstText = await first.Content.ReadAsStringAsync();
+        string secondText = await second.Content.ReadAsStringAsync();
+        Assert.Equal(HttpStatusCode.Created, first.StatusCode);
+        Assert.Equal(HttpStatusCode.Created, second.StatusCode);
+
+        using JsonDocument firstDocument = JsonDocument.Parse(firstText);
+        using JsonDocument secondDocument = JsonDocument.Parse(secondText);
+        Guid firstId = firstDocument.RootElement.GetProperty("id").GetGuid();
+        Guid secondId = secondDocument.RootElement.GetProperty("id").GetGuid();
+        Assert.Equal(42, firstDocument.RootElement.GetProperty("seed").GetInt32());
+        Assert.NotEqual(firstId, secondId);
+
+        HttpResponseMessage firstRoll = await _client.PostAsync(new Uri($"/games/{firstId}/roll", UriKind.Relative), null);
+        HttpResponseMessage secondRoll = await _client.PostAsync(new Uri($"/games/{secondId}/roll", UriKind.Relative), null);
+        string firstRollText = await firstRoll.Content.ReadAsStringAsync();
+        string secondRollText = await secondRoll.Content.ReadAsStringAsync();
+        Assert.Equal(HttpStatusCode.OK, firstRoll.StatusCode);
+        using JsonDocument rolled = JsonDocument.Parse(firstRollText);
+        using JsonDocument again = JsonDocument.Parse(secondRollText);
+        Assert.Equal(
+            rolled.RootElement.GetProperty("lastRoll").GetProperty("faces").ToString(),
+            again.RootElement.GetProperty("lastRoll").GetProperty("faces").ToString());
+        Assert.Equal(
+            rolled.RootElement.GetProperty("players")[0].GetProperty("boardIndex").GetInt32(),
+            again.RootElement.GetProperty("players")[0].GetProperty("boardIndex").GetInt32());
     }
 
     [Fact]
