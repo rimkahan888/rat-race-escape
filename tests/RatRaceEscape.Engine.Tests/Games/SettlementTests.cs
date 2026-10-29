@@ -7,7 +7,7 @@ public class SettlementTests
     [Fact]
     public void A_bill_that_cash_cannot_cover_bankrupts_a_player_with_no_assets()
     {
-        Game landed = DoodadTable(Money.FromDollars(1_000)).Roll(new ScriptedDieRoller([1]));
+        Game landed = DoodadTable(Money.FromDollars(8_000)).Roll(new ScriptedDieRoller([1]));
 
         TurnException unpaid = Assert.Throws<TurnException>(() => landed.Resolve());
         Game settled = landed.Settle();
@@ -67,7 +67,7 @@ public class SettlementTests
 
         TurnException borrow = Assert.Throws<TurnException>(() => settled.Borrow(1));
         Game bo = settled.EndTurn();
-        Game back = bo.Roll(new ScriptedDieRoller([1])).Resolve().EndTurn();
+        Game back = bo.Roll(new ScriptedDieRoller([6])).Resolve().EndTurn();
 
         Assert.Contains("A bankrupt player cannot take that action.", borrow.Errors);
         Assert.Equal("Bo", bo.CurrentPlayer.Name);
@@ -76,7 +76,7 @@ public class SettlementTests
         Assert.Equal("Bo", back.CurrentPlayer.Name);
         Assert.True(back.Players[0].IsBankrupt);
         Assert.Equal(GamePhase.RatRace, back.Phase);
-        Assert.Equal(Money.FromDollars(400), back.Players[1].Cash);
+        Assert.Equal(Money.FromDollars(1_950), back.Players[1].Cash);
     }
 
     [Fact]
@@ -122,6 +122,25 @@ public class SettlementTests
         Assert.Equal(Money.FromDollars(900), covered.CurrentPlayer.Cash);
     }
 
+    [Fact]
+    public void A_bill_bigger_than_cash_is_paid_with_a_loan_that_keeps_cash_flow()
+    {
+        Game landed = DoodadTable(Money.FromDollars(1_000)).Roll(new ScriptedDieRoller([1]));
+        Money before = CashFlow.For(landed.CurrentPlayer).Monthly;
+
+        Game settled = landed.Settle();
+
+        Assert.False(settled.CurrentPlayer.IsBankrupt);
+        Assert.Equal(Money.FromDollars(900), settled.CurrentPlayer.Cash);
+        LoanLiability loan = Assert.Single(settled.CurrentPlayer.BalanceSheet.OtherLoans);
+        Assert.Equal(Money.FromDollars(1_000), loan.Balance);
+        Assert.Equal(Money.FromDollars(100), loan.MonthlyPayment);
+        Assert.Equal(before - Money.FromDollars(100), CashFlow.For(settled.CurrentPlayer).Monthly);
+        Assert.False(CashFlow.For(settled.CurrentPlayer).Monthly.IsNegative);
+        Assert.Equal(TurnPhase.AwaitingEnd, settled.TurnPhase);
+        Assert.Equal(GamePhase.RatRace, settled.EndTurn().Phase);
+    }
+
     private static Game DoodadTable(Money cost)
     {
         Doodad crown = Doodad.Create(
@@ -140,7 +159,7 @@ public class SettlementTests
             "gold-crown",
             "Gold Crown",
             "A crown the dentist did not plan for.",
-            Money.FromDollars(1_000));
+            Money.FromDollars(8_000));
         CardPiles piles = CardPiles.Create(new IdentityShuffle())
             .WithDoodads(Deck<Doodad>.Create([crown], new IdentityShuffle()));
         return Game.Create(

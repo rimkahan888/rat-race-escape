@@ -51,7 +51,7 @@ public class CashFlowTests
         CashFlow cashFlow = CashFlow.From(Statement(passiveCents: 99, taxesCents: 100));
 
         Assert.Equal(Money.FromCents(-1), cashFlow.PassiveSurplus);
-        Assert.Equal(Money.FromCents(-1), cashFlow.Monthly);
+        Assert.Equal(Money.Zero, cashFlow.Monthly);
         Assert.False(cashFlow.PassiveIncomeExceedsExpenses);
     }
 
@@ -77,21 +77,22 @@ public class CashFlowTests
     }
 
     [Fact]
-    public void Monthly_is_negative_when_expenses_exceed_income()
+    public void Monthly_stays_at_zero_when_expenses_exceed_income()
     {
         CashFlow cashFlow = CashFlow.From(Statement(salaryCents: 40, taxesCents: 100));
 
-        Assert.Equal(Money.FromCents(-60), cashFlow.Monthly);
-        Assert.True(cashFlow.Monthly.IsNegative);
+        Assert.Equal(Money.Zero, cashFlow.Monthly);
+        Assert.False(cashFlow.Monthly.IsNegative);
+        Assert.Equal(Money.FromCents(-60), cashFlow.TotalIncome - cashFlow.TotalExpenses);
         Assert.False(cashFlow.PassiveIncomeExceedsExpenses);
     }
 
     [Fact]
-    public void Negative_passive_income_widens_the_shortfall()
+    public void Negative_passive_income_widens_the_shortfall_without_a_negative_payday()
     {
         CashFlow cashFlow = CashFlow.From(Statement(passiveCents: -50, taxesCents: 10));
 
-        Assert.Equal(Money.FromCents(-60), cashFlow.Monthly);
+        Assert.Equal(Money.Zero, cashFlow.Monthly);
         Assert.Equal(Money.FromCents(-60), cashFlow.PassiveSurplus);
         Assert.False(cashFlow.PassiveIncomeExceedsExpenses);
     }
@@ -115,7 +116,7 @@ public class CashFlowTests
         Assert.True(before.PassiveIncomeExceedsExpenses);
         Assert.Equal(Money.FromCents(100), before.Monthly);
         Assert.False(after.PassiveIncomeExceedsExpenses);
-        Assert.Equal(Money.FromCents(-1), after.Monthly);
+        Assert.Equal(Money.Zero, after.Monthly);
         Assert.Equal(Money.FromCents(-1), after.PassiveSurplus);
     }
 
@@ -124,7 +125,7 @@ public class CashFlowTests
     {
         CashFlow cashFlow = CashFlow.From(Statement(passiveCents: long.MinValue));
 
-        Assert.Equal(Money.FromCents(long.MinValue), cashFlow.Monthly);
+        Assert.Equal(Money.Zero, cashFlow.Monthly);
         Assert.Equal(Money.FromCents(long.MinValue), cashFlow.PassiveSurplus);
         Assert.False(cashFlow.PassiveIncomeExceedsExpenses);
     }
@@ -160,9 +161,9 @@ public class CashFlowTests
 
         CashFlow cashFlow = CashFlow.For(player);
 
-        Assert.Equal(baker.MonthlyCashFlow(3), cashFlow.Monthly);
-        Assert.Equal(Money.FromCents(-21_000), cashFlow.Monthly);
-        Assert.True(cashFlow.Monthly.IsNegative);
+        Assert.Equal(Money.FromCents(-21_000), baker.MonthlyCashFlow(3));
+        Assert.Equal(Money.Zero, cashFlow.Monthly);
+        Assert.False(cashFlow.Monthly.IsNegative);
         Assert.False(cashFlow.PassiveIncomeExceedsExpenses);
     }
 

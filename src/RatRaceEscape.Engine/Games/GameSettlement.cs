@@ -84,10 +84,7 @@ public sealed partial class Game
         }
 
         CardPiles piles = Piles.WithDoodads(drawn.Deck);
-        Player raised = ForcedSale.Raise(CurrentPlayer, drawn.Card.Cost);
-        Player settled = raised.Cash >= drawn.Card.Cost
-            ? DoodadCharge.Pay(raised, drawn.Card)
-            : Bankruptcy.Apply(raised);
+        Player settled = Shortfall.Cover(CurrentPlayer, drawn.Card.Cost);
         return WithPlayer(
             settled,
             TurnPhase.AwaitingEnd,

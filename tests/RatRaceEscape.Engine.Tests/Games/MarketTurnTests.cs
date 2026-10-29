@@ -36,7 +36,7 @@ public class MarketTurnTests
     }
 
     [Fact]
-    public void A_charge_one_player_cannot_cover_bankrupts_that_player_only()
+    public void A_charge_bigger_than_cash_is_covered_by_a_loan_when_cash_flow_allows()
     {
         MarketCard levy = MarketCard.Event(
             "wharf-levy",
@@ -51,9 +51,10 @@ public class MarketTurnTests
 
         Assert.Equal("wharf-levy", settled.Drawn!.Id);
         Assert.Equal(TurnPhase.AwaitingEnd, settled.TurnPhase);
-        Assert.True(settled.Players[0].IsBankrupt);
-        Assert.Equal(Money.Zero, settled.Players[0].Cash);
-        Assert.Empty(settled.Players[0].BalanceSheet.OtherLoans);
+        Assert.False(settled.Players[0].IsBankrupt);
+        Assert.Equal(Money.FromDollars(900), settled.Players[0].Cash);
+        Assert.Equal(BankLoan.Increment, Assert.Single(settled.Players[0].BalanceSheet.OtherLoans).Balance);
+        Assert.False(CashFlow.For(settled.Players[0]).Monthly.IsNegative);
         Assert.False(settled.Players[1].IsBankrupt);
         Assert.Equal(Money.FromDollars(400), settled.Players[1].Cash);
         Assert.Equal(Money.FromDollars(900), landed.Players[0].Cash);

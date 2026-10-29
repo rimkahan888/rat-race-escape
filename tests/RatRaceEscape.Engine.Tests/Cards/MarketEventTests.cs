@@ -23,7 +23,7 @@ public class MarketEventTests
     }
 
     [Fact]
-    public void A_short_player_goes_bankrupt_and_the_others_still_pay()
+    public void A_short_player_borrows_when_cash_flow_allows_and_the_others_still_pay()
     {
         Player baker = Baker().WithCash(Money.FromDollars(100));
         Player archivist = Archivist();
@@ -31,12 +31,29 @@ public class MarketEventTests
 
         Player[] billed = MarketEvent.Apply([baker, archivist], Money.FromDollars(-150));
 
-        Assert.True(billed[0].IsBankrupt);
-        Assert.Equal(Money.Zero, billed[0].Cash);
+        Assert.False(billed[0].IsBankrupt);
+        Assert.Equal(Money.FromDollars(100) + BankLoan.Increment - Money.FromDollars(150), billed[0].Cash);
+        Assert.Equal(BankLoan.Increment, Assert.Single(billed[0].BalanceSheet.OtherLoans).Balance);
+        Assert.False(CashFlow.For(billed[0]).Monthly.IsNegative);
         Assert.Equal(archivistCash - Money.FromDollars(150), billed[1].Cash);
         Assert.False(billed[1].IsBankrupt);
         Assert.Equal(Money.FromDollars(100), baker.Cash);
         Assert.Equal(archivistCash, archivist.Cash);
+    }
+
+    [Fact]
+    public void A_short_player_with_no_room_to_borrow_goes_bankrupt()
+    {
+        Player baker = Baker().WithChildCount(3).WithCash(Money.FromDollars(100));
+        Player archivist = Archivist();
+
+        Player[] billed = MarketEvent.Apply([baker, archivist], Money.FromDollars(-150));
+
+        Assert.True(billed[0].IsBankrupt);
+        Assert.Equal(Money.Zero, billed[0].Cash);
+        Assert.Empty(billed[0].BalanceSheet.OtherLoans);
+        Assert.False(billed[1].IsBankrupt);
+        Assert.Equal(archivist.Cash - Money.FromDollars(150), billed[1].Cash);
     }
 
     [Fact]

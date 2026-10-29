@@ -22,7 +22,7 @@ public static class AssetPurchase
         properties.AddRange(sheet.RealEstate);
         properties.Add(holding);
 
-        return player.WithBalanceSheet(BalanceSheet.Create(
+        Player buyer = player.WithBalanceSheet(BalanceSheet.Create(
             savings,
             sheet.Stocks,
             properties,
@@ -31,6 +31,8 @@ public static class AssetPurchase
             sheet.CarLoan,
             sheet.CreditCard,
             sheet.OtherLoans));
+        CashFlow.RejectIfNegative(buyer, "That purchase would leave monthly cash flow below zero.");
+        return buyer;
     }
 
     public static Player BuyBusiness(Player player, string name, Money downPayment, Money liability, Money monthlyCashFlow)
@@ -46,7 +48,7 @@ public static class AssetPurchase
         businesses.AddRange(sheet.Businesses);
         businesses.Add(holding);
 
-        return player.WithBalanceSheet(BalanceSheet.Create(
+        Player buyer = player.WithBalanceSheet(BalanceSheet.Create(
             savings,
             sheet.Stocks,
             sheet.RealEstate,
@@ -55,6 +57,8 @@ public static class AssetPurchase
             sheet.CarLoan,
             sheet.CreditCard,
             sheet.OtherLoans));
+        CashFlow.RejectIfNegative(buyer, "That purchase would leave monthly cash flow below zero.");
+        return buyer;
     }
 
     private static void RequireDownPayment(Money downPayment)

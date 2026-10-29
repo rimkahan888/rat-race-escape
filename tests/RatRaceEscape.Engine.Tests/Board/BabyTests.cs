@@ -35,7 +35,8 @@ public class BabyTests
         Assert.Equal(3, Player.MaximumChildren);
         Assert.Equal(3, family.ChildCount);
         Assert.Same(family, capped);
-        Assert.Equal(Money.FromCents(-21_000), CashFlow.For(capped).Monthly);
+        Assert.Equal(Money.Zero, CashFlow.For(capped).Monthly);
+        Assert.Equal(Money.FromCents(-21_000), capped.Profession.MonthlyCashFlow(3));
     }
 
     [Fact]
@@ -104,8 +105,8 @@ public class BabyTests
 
         Assert.Equal(3, capped.CurrentPlayer.ChildCount);
         Assert.Equal(8, capped.CurrentPlayer.BoardIndex);
-        Assert.Equal(Money.FromCents(-21_000), CashFlow.For(capped.CurrentPlayer).Monthly);
-        Assert.Equal(Money.FromCents(216_000), capped.CurrentPlayer.Cash);
+        Assert.Equal(Money.Zero, CashFlow.For(capped.CurrentPlayer).Monthly);
+        Assert.Equal(Money.FromCents(279_000), capped.CurrentPlayer.Cash);
     }
 
     [Fact]
